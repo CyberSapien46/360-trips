@@ -1,12 +1,21 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize Supabase client with fallback values
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create client with conditional check
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+// Show error message if Supabase credentials are missing
+if (!supabase) {
+  console.error('Supabase URL and/or Anon Key are missing.');
+}
 
 type User = {
   id: string;
@@ -35,11 +44,22 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Check if Supabase client is available
+    if (!supabase) {
+      setIsLoading(false);
+      toast({
+        title: "Configuration Error",
+        description: "Supabase is not properly configured. Please check your environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check if user is authenticated with Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -90,6 +110,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase is not properly configured');
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -121,6 +145,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase is not properly configured');
+      }
+      
       // Create auth user in Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -177,6 +205,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      if (!supabase) {
+        throw new Error('Supabase is not properly configured');
+      }
+      
       await supabase.auth.signOut();
       setUser(null);
       localStorage.removeItem('vr-travel-user');
@@ -197,6 +229,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const updateProfile = async (data: Partial<User>) => {
     setIsLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase is not properly configured');
+      }
+      
       if (!user) {
         throw new Error('User not authenticated');
       }
