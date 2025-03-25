@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,7 +27,7 @@ const formSchema = z.object({
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isConfigured } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -43,22 +42,57 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
+      if (!isConfigured) {
+        throw new Error('Supabase is not properly configured. Please set the environment variables.');
+      }
+      
       await login(values.email, values.password);
       navigate('/profile');
     } catch (error) {
       console.error('Login error:', error);
-      // Error is handled in the auth context
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
   
   const handleSocialLogin = (provider: string) => {
+    if (!isConfigured) {
+      toast({
+        title: "Configuration Error",
+        description: "Supabase is not properly configured. Please set the environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Social login",
       description: `${provider} login is not yet implemented.`,
     });
   };
+  
+  if (!isConfigured) {
+    return (
+      <div className="max-w-md w-full p-4 bg-red-50 border border-red-200 rounded-md">
+        <h3 className="text-lg font-semibold text-red-600 mb-2">Configuration Error</h3>
+        <p className="text-red-600 mb-4">
+          Supabase is not properly configured. Please make sure the following environment variables are set:
+        </p>
+        <ul className="list-disc list-inside text-red-600 mb-4">
+          <li>VITE_SUPABASE_URL</li>
+          <li>VITE_SUPABASE_ANON_KEY</li>
+        </ul>
+        <p className="text-red-600">
+          You can still use the form but authentication functionality will not work.
+        </p>
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-md w-full">
