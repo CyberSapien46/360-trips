@@ -17,7 +17,7 @@ import { Globe, Search } from 'lucide-react';
 
 const Destinations = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('all');
   const [videoUrl, setVideoUrl] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   
@@ -35,7 +35,7 @@ const Destinations = () => {
                          dest.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesRegion = selectedRegion === '' || dest.location.includes(selectedRegion);
+    const matchesRegion = selectedRegion === 'all' || dest.location.includes(selectedRegion);
     
     return matchesSearch && matchesRegion;
   });
@@ -83,7 +83,7 @@ const Destinations = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Regions</SelectItem>
+                    <SelectItem value="all">All Regions</SelectItem>
                     {regions.map(region => (
                       <SelectItem key={region} value={region}>
                         {region}
@@ -95,7 +95,7 @@ const Destinations = () => {
               <Button 
                 onClick={() => {
                   setSearchQuery('');
-                  setSelectedRegion('');
+                  setSelectedRegion('all');
                 }}
                 variant="outline"
                 className="md:w-auto"
@@ -114,7 +114,7 @@ const Destinations = () => {
               <Button 
                 onClick={() => {
                   setSearchQuery('');
-                  setSelectedRegion('');
+                  setSelectedRegion('all');
                 }}
               >
                 View All Destinations
