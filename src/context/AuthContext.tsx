@@ -1,6 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 type User = {
   id: string;
@@ -34,37 +40,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('vr-travel-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check if user is authenticated with Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setIsLoading(true);
+        
+        if (session) {
+          // Get user profile data from Supabase
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (data && !error) {
+            const userData: User = {
+              id: session.user.id,
+              name: data.name || session.user.user_metadata?.name || 'User',
+              email: session.user.email!,
+              photoUrl: data.photo_url || null,
+            };
+            setUser(userData);
+            localStorage.setItem('vr-travel-user', JSON.stringify(userData));
+          } else {
+            // If profile doesn't exist yet, create basic user object
+            const userData: User = {
+              id: session.user.id,
+              name: session.user.user_metadata?.name || 'User',
+              email: session.user.email!,
+              photoUrl: null,
+            };
+            setUser(userData);
+            localStorage.setItem('vr-travel-user', JSON.stringify(userData));
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem('vr-travel-user');
+        }
+        
+        setIsLoading(false);
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // For demo purposes, we're simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      // In a real app, you would validate against a backend
-      // For now, we'll use a mock user
-      if (email === 'demo@example.com' && password === 'password') {
-        const newUser = {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com',
-          photoUrl: null,
-        };
-        setUser(newUser);
-        localStorage.setItem('vr-travel-user', JSON.stringify(newUser));
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data && data.user) {
+        // User profile will be set by the auth state change listener
         toast({
           title: "Success",
           description: "You've successfully logged in",
         });
-      } else {
-        throw new Error('Invalid credentials');
       }
     } catch (error) {
       toast({
@@ -81,24 +121,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // For demo purposes, we're simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // In a real app, you would send this data to your backend
-      const newUser = {
-        id: Math.random().toString(36).substring(2, 9),
-        name,
+      // Create auth user in Supabase
+      const { data, error } = await supabase.auth.signUp({
         email,
-        photoUrl: null,
-      };
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
       
-      // For demo, we're just storing in localStorage
-      localStorage.setItem('vr-travel-user', JSON.stringify(newUser));
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data && data.user) {
+        // Create profile in profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              name,
+              email,
+              photo_url: null,
+              created_at: new Date(),
+            },
+          ]);
+          
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        }
+      }
       
       toast({
         title: "Account created",
         description: "Your account has been successfully created. Please log in.",
       });
+      
+      // Sign out after registration so user can log in explicitly
+      await supabase.auth.signOut();
+      
     } catch (error) {
       toast({
         title: "Signup failed",
@@ -111,23 +175,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('vr-travel-user');
-    toast({
-      title: "Logged out",
-      description: "You've been successfully logged out",
-    });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      localStorage.removeItem('vr-travel-user');
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out",
+      });
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateProfile = async (data: Partial<User>) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (!user) {
         throw new Error('User not authenticated');
+      }
+      
+      // Update profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          photo_url: data.photoUrl,
+          // Don't update email through this method, use Supabase auth for that
+        })
+        .eq('id', user.id);
+        
+      if (error) {
+        throw new Error(error.message);
       }
       
       const updatedUser = { ...user, ...data };

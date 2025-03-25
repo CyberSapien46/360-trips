@@ -45,6 +45,7 @@ const LoginForm = () => {
       await login(values.email, values.password);
       navigate('/profile');
     } catch (error) {
+      console.error('Login error:', error);
       // Error is handled in the auth context
     } finally {
       setIsLoading(false);
