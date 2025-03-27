@@ -6,10 +6,41 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://chnqqpytvpggvfvggosp.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobnFxcHl0dnBnZ3Zmdmdnb3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4ODg0ODMsImV4cCI6MjA1ODQ2NDQ4M30.z3EH0sw2GyyDVsGqLQyNwdZ8WAHQb3H2Vruy556y2n8";
 
+// Define database interface with tables
+export type CustomDatabase = Database & {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          name: string | null;
+          email: string | null;
+          photo_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name?: string | null;
+          email?: string | null;
+          photo_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string | null;
+          email?: string | null;
+          photo_url?: string | null;
+          created_at?: string;
+        };
+      };
+    };
+  };
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<CustomDatabase>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

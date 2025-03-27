@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       name: currentSession.user.user_metadata?.name || 'User',
                       email: currentSession.user.email!,
                       photo_url: null,
-                      created_at: new Date(),
+                      created_at: new Date().toISOString(),
                     },
                   ]);
                   
@@ -203,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name,
               email,
               photo_url: null,
-              created_at: new Date(),
+              created_at: new Date().toISOString(),
             },
           ]);
           
