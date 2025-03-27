@@ -17,7 +17,7 @@ interface ProfileTabsProps {
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   const { user, updateProfile } = useAuth();
-  const { bookings, userPackages, cancelBooking } = useTravel();
+  const { bookings, userPackages, cancelBooking, requestQuote } = useTravel();
   
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({
     defaultValues: {
@@ -37,6 +37,14 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   const userDestinations = destinations.filter(dest => 
     userPackages.includes(dest.id)
   );
+
+  const handleQuoteRequest = async () => {
+    try {
+      await requestQuote();
+    } catch (error) {
+      console.error('Error requesting quote:', error);
+    }
+  };
   
   return (
     <Tabs defaultValue="profile" className="w-full">
@@ -148,6 +156,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
                       <p className="text-sm text-muted-foreground">
                         Address: {booking.address}
                       </p>
+                      {booking.additionalNotes && (
+                        <p className="text-sm text-muted-foreground">
+                          Notes: {booking.additionalNotes}
+                        </p>
+                      )}
                       <div className="mt-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                           ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
@@ -160,7 +173,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
                       </div>
                     </div>
                     
-                    {booking.status !== 'cancelled' && (
+                    {booking.status !== 'cancelled' && booking.status !== 'completed' && (
                       <div className="flex items-center">
                         <Button 
                           variant="outline" 
@@ -225,7 +238,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
           </CardContent>
           {userDestinations.length > 0 && (
             <CardFooter>
-              <Button className="w-full" variant="outline">
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={handleQuoteRequest}
+              >
                 Request a Quote
               </Button>
             </CardFooter>

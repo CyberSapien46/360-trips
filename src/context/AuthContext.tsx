@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userProfile = createUserProfile(data, currentSession);
         setUser(userProfile);
       } else {
+        console.log('Profile not found, creating one');
         // If profile doesn't exist, create one
         const userProfile: UserProfile = {
           id: userId,
@@ -71,15 +72,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create the profile in the database
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: userId,
-              name: currentSession.user.user_metadata?.name || 'User',
-              email: currentSession.user.email!,
-              photo_url: null,
-              created_at: new Date().toISOString(),
-            },
-          ]);
+          .insert({
+            id: userId,
+            name: currentSession.user.user_metadata?.name || 'User',
+            email: currentSession.user.email!,
+            photo_url: null,
+            created_at: new Date().toISOString(),
+          });
           
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -92,7 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // First, get the current session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      const { session: currentSession } = data;
+      
       console.log('Current session on init:', currentSession);
       setSession(currentSession);
       
@@ -109,7 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsLoading(false);
       }
-    });
+    };
+    
+    initAuth();
     
     // Then, set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -171,6 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Starting signup process for:', email);
+      
       // Create auth user in Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -183,22 +189,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) {
+        console.error('Signup error:', error);
         throw new Error(error.message);
       }
+      
+      console.log('Signup response:', data);
       
       if (data && data.user) {
         // Create profile in profiles table
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              name,
-              email,
-              photo_url: null,
-              created_at: new Date().toISOString(),
-            },
-          ]);
+          .insert({
+            id: data.user.id,
+            name,
+            email,
+            photo_url: null,
+            created_at: new Date().toISOString(),
+          });
           
         if (profileError) {
           console.error('Error creating profile:', profileError);
@@ -207,13 +214,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast({
         title: "Account created",
-        description: "Your account has been successfully created. Please log in.",
+        description: "Your account has been successfully created. Please check your email to confirm your account before logging in.",
       });
       
-      // Sign out after registration so user can log in explicitly
-      await supabase.auth.signOut();
-      
     } catch (error) {
+      console.error('Full signup error:', error);
       toast({
         title: "Signup failed",
         description: error instanceof Error ? error.message : "An unknown error occurred",
