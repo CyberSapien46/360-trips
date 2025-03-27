@@ -112,9 +112,9 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
               date: booking.date,
               time: booking.time,
               address: booking.address,
-              status: booking.status,
+              status: booking.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
               createdAt: booking.created_at,
-              additionalNotes: booking.additional_notes
+              additionalNotes: booking.additional_notes || undefined
             }));
             setBookings(formattedBookings);
           } else {

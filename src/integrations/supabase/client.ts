@@ -33,6 +33,81 @@ export type CustomDatabase = Database & {
           created_at?: string;
         };
       };
+      user_packages: {
+        Row: {
+          id: string;
+          user_id: string;
+          destination_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          destination_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          destination_id?: string;
+          created_at?: string;
+        };
+      };
+      vr_bookings: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          time: string;
+          address: string;
+          status: string;
+          additional_notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          date: string;
+          time: string;
+          address: string;
+          status: string;
+          additional_notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          date?: string;
+          time?: string;
+          address?: string;
+          status?: string;
+          additional_notes?: string | null;
+          created_at?: string;
+        };
+      };
+      quote_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          package_ids: string[];
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          package_ids: string[];
+          status: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          package_ids?: string[];
+          status?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 };

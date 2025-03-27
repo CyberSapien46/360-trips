@@ -14,9 +14,9 @@ const ADMIN_EMAILS = ['admin@example.com'];
 
 const Admin = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [bookings, setBookings] = useState([]);
-  const [quoteRequests, setQuoteRequests] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const navigate = useNavigate();
@@ -46,8 +46,7 @@ const Admin = () => {
         .select(`
           *,
           profiles:user_id(name, email)
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (bookingsError) throw bookingsError;
       setBookings(bookingsData || []);
@@ -58,8 +57,7 @@ const Admin = () => {
         .select(`
           *,
           profiles:user_id(name, email)
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (quotesError) throw quotesError;
       setQuoteRequests(quotesData || []);
@@ -80,7 +78,7 @@ const Admin = () => {
     }
   };
 
-  const updateBookingStatus = async (id, status) => {
+  const updateBookingStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
         .from('vr_bookings')
@@ -96,7 +94,7 @@ const Admin = () => {
     }
   };
 
-  const updateQuoteStatus = async (id, status) => {
+  const updateQuoteStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
         .from('quote_requests')

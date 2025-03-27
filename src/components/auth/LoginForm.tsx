@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +35,7 @@ const LoginForm = () => {
   const from = location.state?.from || '/profile';
   
   useEffect(() => {
+    // Check if user is already authenticated 
     if (isAuthenticated && !authLoading) {
       navigate(from, { replace: true });
     }
@@ -52,8 +54,10 @@ const LoginForm = () => {
     
     try {
       await login(values.email, values.password);
+      // Successful login will trigger the useEffect above to redirect
     } catch (error) {
       console.error('Login error:', error);
+      // Error toast is already shown in the login function
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +71,7 @@ const LoginForm = () => {
   };
   
   if (isAuthenticated && !authLoading) {
-    return null; 
+    return null; // Will redirect via useEffect
   }
   
   return (

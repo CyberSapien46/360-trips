@@ -33,6 +33,84 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_requests: {
+        Row: {
+          created_at: string
+          id: string
+          package_ids: string[]
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          package_ids: string[]
+          status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          package_ids?: string[]
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_packages: {
+        Row: {
+          created_at: string
+          destination_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vr_bookings: {
+        Row: {
+          additional_notes: string | null
+          address: string
+          created_at: string
+          date: string
+          id: string
+          status: string
+          time: string
+          user_id: string
+        }
+        Insert: {
+          additional_notes?: string | null
+          address: string
+          created_at?: string
+          date: string
+          id: string
+          status: string
+          time: string
+          user_id: string
+        }
+        Update: {
+          additional_notes?: string | null
+          address?: string
+          created_at?: string
+          date?: string
+          id?: string
+          status?: string
+          time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

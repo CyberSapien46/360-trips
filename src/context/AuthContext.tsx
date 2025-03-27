@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 
 type UserProfile = {
   id: string;
@@ -49,6 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Separate function to fetch user profile
   const fetchUserProfile = async (userId: string, currentSession: Session) => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -56,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (data && !error) {
+        console.log('Profile found:', data);
         const userProfile = createUserProfile(data, currentSession);
         setUser(userProfile);
       } else {
@@ -82,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (insertError) {
           console.error('Error creating profile:', insertError);
+        } else {
+          console.log('New profile created successfully');
         }
       }
     } catch (err) {
@@ -92,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // First, get the current session
     const initAuth = async () => {
+      console.log('Initializing auth');
+      
       const { data } = await supabase.auth.getSession();
       const { session: currentSession } = data;
       
@@ -145,22 +152,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error('Login error:', error);
         throw new Error(error.message);
       }
       
-      // Auth state change will update the user
+      console.log('Login successful:', data);
       
       toast({
         title: "Success",
         description: "You've successfully logged in",
       });
+      
+      // The auth state change handler will update the user
+      
     } catch (error) {
+      console.error('Login error caught:', error);
       toast({
         title: "Login failed",
         description: error instanceof Error ? error.message : "An unknown error occurred",
