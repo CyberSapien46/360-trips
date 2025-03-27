@@ -1,19 +1,23 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+
+// Simple admin check - in a real app, you'd have proper roles in your DB
+const ADMIN_EMAILS = ['admin@example.com']; 
 
 type UserProfile = {
   id: string;
   name: string;
   email: string;
   photoUrl: string | null;
+  isAdmin: boolean;
 };
 
 type AuthContextType = {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
@@ -38,11 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper function to extract profile data from DB result and session
   const createUserProfile = (userData: any, userSession: Session): UserProfile => {
+    const isAdmin = ADMIN_EMAILS.includes(userSession.user.email || '');
     return {
       id: userSession.user.id,
       name: userData?.name || userSession.user.user_metadata?.name || 'User',
       email: userSession.user.email!,
       photoUrl: userData?.photo_url || null,
+      isAdmin: isAdmin,
     };
   };
 
@@ -69,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: currentSession.user.user_metadata?.name || 'User',
           email: currentSession.user.email!,
           photoUrl: null,
+          isAdmin: ADMIN_EMAILS.includes(currentSession.user.email || ''),
         };
         setUser(userProfile);
         
@@ -164,11 +171,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
       
+      // Check if the user is an admin
+      if (data.user && !ADMIN_EMAILS.includes(data.user.email || '')) {
+        // If not an admin, sign out
+        await supabase.auth.signOut();
+        throw new Error('Access denied. Admin login required.');
+      }
+      
       console.log('Login successful:', data);
       
       toast({
         title: "Success",
-        description: "You've successfully logged in",
+        description: "Admin login successful",
       });
       
       // The auth state change handler will update the user
@@ -308,6 +322,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin: user?.isAdmin || false,
         isLoading,
         login,
         signup,

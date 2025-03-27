@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -9,33 +8,31 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 
-// Simple admin check - in a real app, you'd have proper roles in your DB
-const ADMIN_EMAILS = ['admin@example.com']; 
-
 const Admin = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [quoteRequests, setQuoteRequests] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simple admin check
-    if (!isLoading && isAuthenticated && user) {
-      const userIsAdmin = ADMIN_EMAILS.includes(user.email);
-      setIsAdmin(userIsAdmin);
-      
-      if (!userIsAdmin) {
+    // Redirect logic for non-admin users
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        navigate('/login');
+      } else if (!isAdmin) {
         navigate('/');
+        toast({
+          title: "Access Denied",
+          description: "You do not have admin privileges",
+          variant: "destructive",
+        });
       } else {
         fetchData();
       }
-    } else if (!isLoading && !isAuthenticated) {
-      navigate('/login');
     }
-  }, [isAuthenticated, isLoading, user, navigate]);
+  }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
   const fetchData = async () => {
     setFetchLoading(true);
