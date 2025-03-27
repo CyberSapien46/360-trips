@@ -1,9 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Form,
   FormControl,
@@ -28,8 +27,17 @@ const formSchema = z.object({
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  
+  const from = location.state?.from || '/profile';
+  
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate, from]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,10 +52,8 @@ const LoginForm = () => {
     
     try {
       await login(values.email, values.password);
-      navigate('/profile');
     } catch (error) {
       console.error('Login error:', error);
-      // Error is handled in the auth context
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +65,10 @@ const LoginForm = () => {
       description: `${provider} login is not yet implemented.`,
     });
   };
+  
+  if (isAuthenticated && !authLoading) {
+    return null; 
+  }
   
   return (
     <div className="max-w-md w-full">
@@ -97,7 +107,7 @@ const LoginForm = () => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>

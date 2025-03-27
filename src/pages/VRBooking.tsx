@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import VRBookingForm from '@/components/booking/VRBookingForm';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,14 @@ import { useAuth } from '@/context/AuthContext';
 import { Headphones, User, CheckCircle } from 'lucide-react';
 
 const VRBooking = () => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  
+  useEffect(() => {
+    if (!isLoading) {
+      setShowAuthForm(!isAuthenticated);
+    }
+  }, [isAuthenticated, isLoading]);
 
   return (
     <MainLayout>
@@ -37,7 +43,11 @@ const VRBooking = () => {
                   Book Your VR Appointment
                 </h2>
                 
-                {isAuthenticated ? (
+                {isLoading ? (
+                  <div className="py-10 text-center">
+                    <p>Loading...</p>
+                  </div>
+                ) : isAuthenticated && user ? (
                   <VRBookingForm />
                 ) : (
                   <div className="py-10 text-center">

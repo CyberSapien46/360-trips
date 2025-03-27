@@ -36,109 +36,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Helper function to extract profile data from DB result and session
+  const createUserProfile = (userData: any, userSession: Session): UserProfile => {
+    return {
+      id: userSession.user.id,
+      name: userData?.name || userSession.user.user_metadata?.name || 'User',
+      email: userSession.user.email!,
+      photoUrl: userData?.photo_url || null,
+    };
+  };
+
+  // Separate function to fetch user profile
+  const fetchUserProfile = async (userId: string, currentSession: Session) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (data && !error) {
+        const userProfile = createUserProfile(data, currentSession);
+        setUser(userProfile);
+      } else {
+        // If profile doesn't exist, create one
+        const userProfile: UserProfile = {
+          id: userId,
+          name: currentSession.user.user_metadata?.name || 'User',
+          email: currentSession.user.email!,
+          photoUrl: null,
+        };
+        setUser(userProfile);
+        
+        // Create the profile in the database
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: userId,
+              name: currentSession.user.user_metadata?.name || 'User',
+              email: currentSession.user.email!,
+              photo_url: null,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+          
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  };
+
   useEffect(() => {
-    // First, set up the auth state change listener
+    // First, get the current session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Current session on init:', currentSession);
+      setSession(currentSession);
+      
+      if (currentSession) {
+        // Set isLoading to true before fetching profile
+        setIsLoading(true);
+        
+        // Use setTimeout to avoid any potential deadlocks
+        setTimeout(() => {
+          fetchUserProfile(currentSession.user.id, currentSession)
+            .finally(() => setIsLoading(false));
+        }, 0);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+    
+    // Then, set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession);
         setSession(currentSession);
         
         if (currentSession) {
-          try {
-            // Get user profile data from Supabase
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentSession.user.id)
-              .single();
-            
-            if (data && !error) {
-              const userData: UserProfile = {
-                id: currentSession.user.id,
-                name: data.name || currentSession.user.user_metadata?.name || 'User',
-                email: currentSession.user.email!,
-                photoUrl: data.photo_url || null,
-              };
-              setUser(userData);
-            } else {
-              // If profile doesn't exist yet, create basic user object
-              const userData: UserProfile = {
-                id: currentSession.user.id,
-                name: currentSession.user.user_metadata?.name || 'User',
-                email: currentSession.user.email!,
-                photoUrl: null,
-              };
-              setUser(userData);
-              
-              // Try to create the profile if it doesn't exist
-              if (error && error.code === 'PGRST116') {
-                // Create profile in profiles table if not exists
-                const { error: insertError } = await supabase
-                  .from('profiles')
-                  .insert([
-                    {
-                      id: currentSession.user.id,
-                      name: currentSession.user.user_metadata?.name || 'User',
-                      email: currentSession.user.email!,
-                      photo_url: null,
-                      created_at: new Date().toISOString(),
-                    },
-                  ]);
-                  
-                if (insertError) {
-                  console.error('Error creating profile:', insertError);
-                }
-              }
-            }
-          } catch (err) {
-            console.error('Error fetching user profile:', err);
-          }
+          // Set isLoading to true before fetching profile
+          setIsLoading(true);
+          
+          // Use setTimeout to avoid any potential deadlocks
+          setTimeout(() => {
+            fetchUserProfile(currentSession.user.id, currentSession)
+              .finally(() => setIsLoading(false));
+          }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
-    
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log('Current session:', currentSession);
-      setSession(currentSession);
-      
-      if (currentSession) {
-        // Get user profile from session
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single()
-          .then(({ data, error }) => {
-            if (data && !error) {
-              const userData: UserProfile = {
-                id: currentSession.user.id,
-                name: data.name || currentSession.user.user_metadata?.name || 'User',
-                email: currentSession.user.email!,
-                photoUrl: data.photo_url || null,
-              };
-              setUser(userData);
-            } else {
-              // If profile doesn't exist yet, create basic user object
-              const userData: UserProfile = {
-                id: currentSession.user.id,
-                name: currentSession.user.user_metadata?.name || 'User',
-                email: currentSession.user.email!,
-                photoUrl: null,
-              };
-              setUser(userData);
-            }
-            setIsLoading(false);
-          });
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
     
     return () => {
       subscription.unsubscribe();
@@ -157,12 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
       
-      if (data && data.user) {
-        toast({
-          title: "Success",
-          description: "You've successfully logged in",
-        });
-      }
+      // Auth state change will update the user
+      
+      toast({
+        title: "Success",
+        description: "You've successfully logged in",
+      });
     } catch (error) {
       toast({
         title: "Login failed",

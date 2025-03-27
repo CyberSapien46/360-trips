@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from '../hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
+import { useAuth } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export type Destination = {
   id: string;
@@ -46,31 +48,58 @@ export const useTravel = () => {
 export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
+  const { user, isAuthenticated } = useAuth();
   const [userPackages, setUserPackages] = useState<string[]>([]);
   const [bookings, setBookings] = useState<VRBooking[]>([]);
 
+  // Load packages when auth state changes
   useEffect(() => {
-    // Load from localStorage if available
-    const storedPackages = localStorage.getItem('vr-travel-packages');
-    const storedBookings = localStorage.getItem('vr-travel-bookings');
-    
-    if (storedPackages) {
-      setUserPackages(JSON.parse(storedPackages));
+    if (isAuthenticated && user) {
+      // If authenticated, use user-specific key
+      const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
+      const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
+      
+      if (storedPackages) {
+        setUserPackages(JSON.parse(storedPackages));
+      }
+      
+      if (storedBookings) {
+        setBookings(JSON.parse(storedBookings));
+      }
+    } else {
+      // If not authenticated, use anonymous storage
+      const storedPackages = localStorage.getItem('vr-travel-packages');
+      const storedBookings = localStorage.getItem('vr-travel-bookings');
+      
+      if (storedPackages) {
+        setUserPackages(JSON.parse(storedPackages));
+      }
+      
+      if (storedBookings) {
+        setBookings(JSON.parse(storedBookings));
+      }
     }
-    
-    if (storedBookings) {
-      setBookings(JSON.parse(storedBookings));
-    }
-  }, []);
+  }, [isAuthenticated, user]);
 
   // Save to localStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem('vr-travel-packages', JSON.stringify(userPackages));
-  }, [userPackages]);
+    if (isAuthenticated && user) {
+      // If authenticated, use user-specific key
+      localStorage.setItem(`vr-travel-packages-${user.id}`, JSON.stringify(userPackages));
+    } else {
+      // If not authenticated, use anonymous storage
+      localStorage.setItem('vr-travel-packages', JSON.stringify(userPackages));
+    }
+  }, [userPackages, isAuthenticated, user]);
 
+  // Save bookings to localStorage
   useEffect(() => {
-    localStorage.setItem('vr-travel-bookings', JSON.stringify(bookings));
-  }, [bookings]);
+    if (isAuthenticated && user) {
+      localStorage.setItem(`vr-travel-bookings-${user.id}`, JSON.stringify(bookings));
+    } else {
+      localStorage.setItem('vr-travel-bookings', JSON.stringify(bookings));
+    }
+  }, [bookings, isAuthenticated, user]);
 
   const addToPackage = (destinationId: string) => {
     if (!userPackages.includes(destinationId)) {
