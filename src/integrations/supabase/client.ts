@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://chnqqpytvpggvfvggosp.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNobnFxcHl0dnBnZ3Zmdmdnb3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4ODg0ODMsImV4cCI6MjA1ODQ2NDQ4M30.z3EH0sw2GyyDVsGqLQyNwdZ8WAHQb3H2Vruy556y2n8";
 
-// Define database interface with tables
+// Define database interface with all tables
 export type CustomDatabase = Database & {
   public: {
     Tables: {
