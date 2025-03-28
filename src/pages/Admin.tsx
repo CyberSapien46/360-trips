@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const Admin = () => {
   const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
