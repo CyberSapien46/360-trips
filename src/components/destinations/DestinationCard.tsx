@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Plus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -16,12 +16,23 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   destination,
   onOpenVideo 
 }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { addToPackage, isInPackage } = useTravel();
   const { toast } = useToast();
   const [liked, setLiked] = useState(false);
   
   const inPackage = isInPackage(destination.id);
+  
+  // Check if destination is in favorites when component mounts
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const storedFavorites = localStorage.getItem(`vr-travel-favorites-${user.id}`);
+      if (storedFavorites) {
+        const favorites = JSON.parse(storedFavorites);
+        setLiked(favorites.includes(destination.id));
+      }
+    }
+  }, [isAuthenticated, user, destination.id]);
   
   const handleAddToPackage = () => {
     if (!isAuthenticated) {
@@ -36,11 +47,37 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   };
   
   const handleLike = () => {
-    setLiked(!liked);
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to add destinations to your favorites",
+      });
+      return;
+    }
+    
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    
+    // Save to localStorage
+    const storedFavorites = localStorage.getItem(`vr-travel-favorites-${user!.id}`) || '[]';
+    let favorites = JSON.parse(storedFavorites);
+    
+    if (newLikedState) {
+      // Add to favorites if not already there
+      if (!favorites.includes(destination.id)) {
+        favorites.push(destination.id);
+      }
+    } else {
+      // Remove from favorites
+      favorites = favorites.filter((id: string) => id !== destination.id);
+    }
+    
+    localStorage.setItem(`vr-travel-favorites-${user!.id}`, JSON.stringify(favorites));
+    
     toast({
-      description: liked 
-        ? `Removed ${destination.name} from favorites` 
-        : `Added ${destination.name} to favorites`,
+      description: newLikedState 
+        ? `Added ${destination.name} to favorites` 
+        : `Removed ${destination.name} from favorites`,
     });
   };
   

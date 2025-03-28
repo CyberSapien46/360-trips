@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import { useTravel, Destination } from '@/context/TravelContext';
-import { CalendarIcon, PackageIcon, UserIcon } from 'lucide-react';
+import { CalendarIcon, PackageIcon, UserIcon, HeartIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileTabsProps {
   destinations: Destination[];
@@ -18,6 +18,7 @@ interface ProfileTabsProps {
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   const { user, updateProfile } = useAuth();
   const { bookings, userPackages, cancelBooking, requestQuote } = useTravel();
+  const [favoriteDestinations, setFavoriteDestinations] = useState<string[]>([]);
   
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({
     defaultValues: {
@@ -26,6 +27,23 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
       phone: '',
     },
   });
+  
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (user) {
+        try {
+          const storedFavorites = localStorage.getItem(`vr-travel-favorites-${user.id}`);
+          if (storedFavorites) {
+            setFavoriteDestinations(JSON.parse(storedFavorites));
+          }
+        } catch (error) {
+          console.error('Error loading favorite destinations:', error);
+        }
+      }
+    };
+    
+    loadFavorites();
+  }, [user]);
   
   const onSubmit = async (data: any) => {
     await updateProfile({
@@ -36,6 +54,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   
   const userDestinations = destinations.filter(dest => 
     userPackages.includes(dest.id)
+  );
+  
+  const userFavorites = destinations.filter(dest => 
+    favoriteDestinations.includes(dest.id)
   );
 
   const handleQuoteRequest = async () => {
@@ -48,7 +70,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="grid grid-cols-3 mb-8">
+      <TabsList className="grid grid-cols-4 mb-8">
         <TabsTrigger value="profile" className="flex items-center gap-2">
           <UserIcon className="h-4 w-4" />
           <span className="hidden sm:inline">Profile</span>
@@ -60,6 +82,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
         <TabsTrigger value="packages" className="flex items-center gap-2">
           <PackageIcon className="h-4 w-4" />
           <span className="hidden sm:inline">My Packages</span>
+        </TabsTrigger>
+        <TabsTrigger value="favorites" className="flex items-center gap-2">
+          <HeartIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">Favorites</span>
         </TabsTrigger>
       </TabsList>
       
@@ -77,7 +103,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user?.photoUrl || ''} />
                   <AvatarFallback className="bg-primary text-xl">
-                    {user?.name.substring(0, 2).toUpperCase()}
+                    {user?.name ? user.name.substring(0, 2).toUpperCase() : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -247,6 +273,52 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
               </Button>
             </CardFooter>
           )}
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="favorites" className="animate-fade-in">
+        <Card>
+          <CardHeader>
+            <CardTitle>Favorite Destinations</CardTitle>
+            <CardDescription>
+              Destinations you've marked as favorites.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {userFavorites.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  You haven't added any destinations to your favorites yet.
+                </p>
+                <Button asChild variant="outline">
+                  <a href="/destinations">Explore Destinations</a>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {userFavorites.map((destination) => (
+                  <div 
+                    key={destination.id}
+                    className="flex bg-muted rounded-lg overflow-hidden hover:shadow-subtle transition-shadow"
+                  >
+                    <div 
+                      className="w-24 h-24 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${destination.imageUrl})` }}
+                    />
+                    <div className="p-3 flex-1">
+                      <h4 className="font-medium line-clamp-1">{destination.name}</h4>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {destination.location}
+                      </p>
+                      <p className="text-sm font-medium text-primary">
+                        ${destination.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
         </Card>
       </TabsContent>
     </Tabs>
