@@ -23,7 +23,7 @@ const Admin = () => {
       if (!isAuthenticated) {
         navigate('/login');
       } else if (!isAdmin) {
-        navigate('/');
+        navigate('/profile');
         toast({
           title: "Access Denied",
           description: "You do not have admin privileges",

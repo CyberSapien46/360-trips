@@ -171,18 +171,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
       
-      // Check if the user is an admin
-      if (data.user && !ADMIN_EMAILS.includes(data.user.email || '')) {
-        // If not an admin, sign out
-        await supabase.auth.signOut();
-        throw new Error('Access denied. Admin login required.');
-      }
-      
+      // For admin page access check - we'll check isAdmin property instead of restricting login
+      // This allows regular users to log in normally
       console.log('Login successful:', data);
       
       toast({
         title: "Success",
-        description: "Admin login successful",
+        description: "Login successful",
       });
       
       // The auth state change handler will update the user
