@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +8,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
-import { useTravel, Destination } from '@/context/TravelContext';
-import { CalendarIcon, PackageIcon, UserIcon, HeartIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useTravel, Destination, PackageGroup } from '@/context/TravelContext';
+import { CalendarIcon, PackageIcon, UserIcon, HeartIcon, PlusCircle, FolderPlus } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProfileTabsProps {
   destinations: Destination[];
@@ -17,8 +33,19 @@ interface ProfileTabsProps {
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
   const { user, updateProfile } = useAuth();
-  const { bookings, userPackages, cancelBooking, requestQuote } = useTravel();
+  const { 
+    bookings, 
+    userPackages, 
+    packageGroups,
+    currentPackageGroup,
+    setCurrentPackageGroup,
+    createPackageGroup,
+    cancelBooking, 
+    requestQuote 
+  } = useTravel();
   const [favoriteDestinations, setFavoriteDestinations] = useState<string[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newPackageName, setNewPackageName] = useState('');
   
   const { register, handleSubmit, formState: { isSubmitting } } = useForm({
     defaultValues: {
@@ -65,6 +92,21 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
       await requestQuote();
     } catch (error) {
       console.error('Error requesting quote:', error);
+    }
+  };
+
+  const handleCreatePackage = async () => {
+    if (newPackageName.trim()) {
+      await createPackageGroup(newPackageName.trim());
+      setNewPackageName('');
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleSelectPackageGroup = (packageGroupId: string) => {
+    const selectedGroup = packageGroups.find(group => group.id === packageGroupId);
+    if (selectedGroup) {
+      setCurrentPackageGroup(selectedGroup);
     }
   };
   
@@ -221,13 +263,67 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ destinations }) => {
       
       <TabsContent value="packages" className="animate-fade-in">
         <Card>
-          <CardHeader>
-            <CardTitle>My Travel Packages</CardTitle>
-            <CardDescription>
-              Destinations you've added to your travel packages.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>My Travel Packages</CardTitle>
+              <CardDescription>
+                Destinations you've added to your travel packages.
+              </CardDescription>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="ml-auto">
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Create Package
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create New Package Group</DialogTitle>
+                  <DialogDescription>
+                    Give your travel package a name to help organize your destinations.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="package-name">Package Name</Label>
+                    <Input
+                      id="package-name"
+                      placeholder="e.g., Summer Vacation 2025"
+                      value={newPackageName}
+                      onChange={(e) => setNewPackageName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleCreatePackage}>Create Package</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
+            {packageGroups.length > 0 && (
+              <div className="mb-6">
+                <Label htmlFor="package-group" className="mb-2 block">Select Package Group</Label>
+                <Select 
+                  value={currentPackageGroup?.id || ''} 
+                  onValueChange={handleSelectPackageGroup}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a package group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {packageGroups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             {userDestinations.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">

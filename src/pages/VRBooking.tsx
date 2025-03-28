@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import VRBookingForm from '@/components/booking/VRBookingForm';
@@ -5,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Headphones, User, CheckCircle } from 'lucide-react';
+import { Headphones, User, CheckCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const VRBooking = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -36,6 +38,13 @@ const VRBooking = () => {
       
       <section className="py-12">
         <div className="container">
+          <Alert className="mb-8 bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              Users can only have one active VR booking at a time. You can book another session after your current booking is completed or if you cancel it.
+            </AlertDescription>
+          </Alert>
+          
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl shadow-subtle p-6 md:p-8">
@@ -98,6 +107,7 @@ const VRBooking = () => {
                     <p><strong>Availability:</strong> 7 days a week, 9am-7pm</p>
                     <p><strong>Equipment:</strong> All equipment provided</p>
                     <p><strong>Requirements:</strong> Minimum 10x10 ft clear space</p>
+                    <p><strong>Limit:</strong> One active booking per user</p>
                     <p className="text-muted-foreground mt-4">
                       The fee will be refunded in full if you book a vacation package within 30 days of your VR experience.
                     </p>

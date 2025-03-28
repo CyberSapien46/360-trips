@@ -38,18 +38,44 @@ export type CustomDatabase = Database & {
           id: string;
           user_id: string;
           destination_id: string;
+          package_name: string;
+          package_group_id: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           destination_id: string;
+          package_name?: string;
+          package_group_id?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
           destination_id?: string;
+          package_name?: string;
+          package_group_id?: string | null;
+          created_at?: string;
+        };
+      };
+      package_groups: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
           created_at?: string;
         };
       };

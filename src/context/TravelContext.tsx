@@ -34,15 +34,26 @@ export type QuoteRequest = {
   createdAt: string;
 };
 
+export type PackageGroup = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
 type TravelContextType = {
   userPackages: string[];
   bookings: VRBooking[];
-  addToPackage: (destinationId: string) => void;
+  packageGroups: PackageGroup[];
+  currentPackageGroup: PackageGroup | null;
+  addToPackage: (destinationId: string, packageName?: string) => void;
   removeFromPackage: (destinationId: string) => void;
   createVRBooking: (booking: Omit<VRBooking, 'id' | 'createdAt'>) => Promise<void>;
   cancelBooking: (bookingId: string) => Promise<void>;
   isInPackage: (destinationId: string) => boolean;
   requestQuote: () => Promise<void>;
+  createPackageGroup: (name: string) => Promise<void>;
+  setCurrentPackageGroup: (packageGroup: PackageGroup | null) => void;
+  hasActiveBooking: boolean;
 };
 
 const TravelContext = createContext<TravelContextType | undefined>(undefined);
@@ -61,13 +72,72 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user, isAuthenticated } = useAuth();
   const [userPackages, setUserPackages] = useState<string[]>([]);
   const [bookings, setBookings] = useState<VRBooking[]>([]);
+  const [packageGroups, setPackageGroups] = useState<PackageGroup[]>([]);
+  const [currentPackageGroup, setCurrentPackageGroup] = useState<PackageGroup | null>(null);
+  const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
-  // Load packages and bookings from Supabase when auth state changes
+  // Check if user has active bookings
+  useEffect(() => {
+    if (bookings.length > 0) {
+      const activeBooking = bookings.some(booking => 
+        booking.status !== 'cancelled' && booking.status !== 'completed'
+      );
+      setHasActiveBooking(activeBooking);
+    } else {
+      setHasActiveBooking(false);
+    }
+  }, [bookings]);
+
+  // Load packages, package groups, and bookings from Supabase when auth state changes
   useEffect(() => {
     const loadUserData = async () => {
       if (isAuthenticated && user) {
         try {
-          // Try to load from Supabase first
+          // Load package groups
+          const { data: groupsData, error: groupsError } = await supabase
+            .from('package_groups')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          if (groupsError) throw groupsError;
+          
+          if (groupsData && groupsData.length > 0) {
+            const formattedGroups: PackageGroup[] = groupsData.map(group => ({
+              id: group.id,
+              name: group.name,
+              createdAt: group.created_at
+            }));
+            setPackageGroups(formattedGroups);
+            
+            // Set first group as current if none is selected
+            if (!currentPackageGroup) {
+              setCurrentPackageGroup(formattedGroups[0]);
+            }
+          } else {
+            // Create a default package group if none exists
+            if (isAuthenticated && user) {
+              const defaultGroupName = "My Travel Packages";
+              const { data: newGroup, error: createError } = await supabase
+                .from('package_groups')
+                .insert({ user_id: user.id, name: defaultGroupName })
+                .select()
+                .single();
+              
+              if (createError) throw createError;
+              
+              if (newGroup) {
+                const formattedGroup: PackageGroup = {
+                  id: newGroup.id,
+                  name: newGroup.name,
+                  createdAt: newGroup.created_at
+                };
+                setPackageGroups([formattedGroup]);
+                setCurrentPackageGroup(formattedGroup);
+              }
+            }
+          }
+          
+          // Try to load packages from Supabase
           const { data: packageData, error: packageError } = await supabase
             .from('user_packages')
             .select('destination_id')
@@ -87,7 +157,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
               // Migrate localStorage data to Supabase
               const packagesToInsert = JSON.parse(storedPackages).map((destId: string) => ({
                 user_id: user.id,
-                destination_id: destId
+                destination_id: destId,
+                package_name: "My Travel Package"
               }));
               
               if (packagesToInsert.length > 0) {
@@ -117,14 +188,26 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
               additionalNotes: booking.additional_notes || undefined
             }));
             setBookings(formattedBookings);
+            
+            // Check if user has any active bookings
+            const activeBooking = formattedBookings.some(booking => 
+              booking.status !== 'cancelled' && booking.status !== 'completed'
+            );
+            setHasActiveBooking(activeBooking);
           } else {
             // If no data in Supabase, check localStorage as fallback
             const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
             if (storedBookings) {
-              setBookings(JSON.parse(storedBookings));
+              const parsedBookings = JSON.parse(storedBookings);
+              setBookings(parsedBookings);
+              
+              // Check if user has any active bookings
+              const activeBooking = parsedBookings.some((booking: VRBooking) => 
+                booking.status !== 'cancelled' && booking.status !== 'completed'
+              );
+              setHasActiveBooking(activeBooking);
               
               // Migrate localStorage bookings to Supabase
-              const parsedBookings = JSON.parse(storedBookings);
               if (parsedBookings.length > 0) {
                 const bookingsToInsert = parsedBookings.map((booking: VRBooking) => ({
                   id: booking.id,
@@ -157,7 +240,14 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           
           if (storedBookings) {
-            setBookings(JSON.parse(storedBookings));
+            const parsedBookings = JSON.parse(storedBookings);
+            setBookings(parsedBookings);
+            
+            // Check if user has any active bookings
+            const activeBooking = parsedBookings.some((booking: VRBooking) => 
+              booking.status !== 'cancelled' && booking.status !== 'completed'
+            );
+            setHasActiveBooking(activeBooking);
           }
         }
       } else {
@@ -170,13 +260,20 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         
         if (storedBookings) {
-          setBookings(JSON.parse(storedBookings));
+          const parsedBookings = JSON.parse(storedBookings);
+          setBookings(parsedBookings);
+          
+          // Check if user has any active bookings
+          const activeBooking = parsedBookings.some((booking: VRBooking) => 
+            booking.status !== 'cancelled' && booking.status !== 'completed'
+          );
+          setHasActiveBooking(activeBooking);
         }
       }
     };
     
     loadUserData();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, currentPackageGroup]);
 
   // Save to localStorage as fallback when state changes
   useEffect(() => {
@@ -196,19 +293,86 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [bookings, isAuthenticated, user]);
 
-  const addToPackage = async (destinationId: string) => {
+  const createPackageGroup = async (name: string) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        description: "You need to be logged in to create a package group",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('package_groups')
+        .insert({ user_id: user.id, name })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        const newGroup: PackageGroup = {
+          id: data.id,
+          name: data.name,
+          createdAt: data.created_at
+        };
+        
+        setPackageGroups(prev => [...prev, newGroup]);
+        setCurrentPackageGroup(newGroup);
+        
+        toast({
+          title: "Package group created",
+          description: `Your new group "${name}" has been created`,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating package group:', error);
+      toast({
+        description: "Failed to create package group",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addToPackage = async (destinationId: string, packageName?: string) => {
     if (!userPackages.includes(destinationId)) {
       try {
+        // Check if we have a current package group
+        if (!currentPackageGroup && isAuthenticated && user) {
+          // Create a default package group if none exists
+          const defaultGroupName = "My Travel Packages";
+          const { data: newGroup, error: createError } = await supabase
+            .from('package_groups')
+            .insert({ user_id: user.id, name: defaultGroupName })
+            .select()
+            .single();
+          
+          if (createError) throw createError;
+          
+          if (newGroup) {
+            const formattedGroup: PackageGroup = {
+              id: newGroup.id,
+              name: newGroup.name,
+              createdAt: newGroup.created_at
+            };
+            setPackageGroups([formattedGroup]);
+            setCurrentPackageGroup(formattedGroup);
+          }
+        }
+        
         // Update local state first for immediate UI feedback
         setUserPackages(prev => [...prev, destinationId]);
         
         // If authenticated, store in Supabase
-        if (isAuthenticated && user) {
+        if (isAuthenticated && user && currentPackageGroup) {
           const { error } = await supabase
             .from('user_packages')
             .insert({ 
               user_id: user.id,
-              destination_id: destinationId 
+              destination_id: destinationId,
+              package_name: packageName || "My Travel Package",
+              package_group_id: currentPackageGroup.id
             });
           
           if (error) throw error;
@@ -266,6 +430,16 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const createVRBooking = async (booking: Omit<VRBooking, 'id' | 'createdAt'>) => {
     try {
+      // Check if user already has an active booking
+      if (hasActiveBooking) {
+        toast({
+          title: "Booking limit reached",
+          description: "You already have an active booking. Please cancel it or wait until it's completed to book another VR experience.",
+          variant: "destructive"
+        });
+        throw new Error("User already has an active booking");
+      }
+      
       const id = Math.random().toString(36).substring(2, 9);
       const createdAt = new Date().toISOString();
       
@@ -277,6 +451,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       
       // Update local state first for immediate UI feedback
       setBookings(prev => [...prev, newBooking]);
+      setHasActiveBooking(true);
       
       // If authenticated, store in Supabase
       if (isAuthenticated && user) {
@@ -302,11 +477,15 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     } catch (error) {
       console.error('Error creating booking:', error);
-      toast({
-        title: "Booking failed",
-        description: "There was an error creating your booking",
-        variant: "destructive"
-      });
+      
+      // Don't show toast here as we already show one for the booking limit
+      if (!(error instanceof Error && error.message === "User already has an active booking")) {
+        toast({
+          title: "Booking failed",
+          description: "There was an error creating your booking",
+          variant: "destructive"
+        });
+      }
       throw error;
     }
   };
@@ -321,6 +500,21 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             : booking
         )
       );
+      
+      // Update hasActiveBooking state
+      const updatedBookings = bookings.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, status: 'cancelled' } 
+          : booking
+      );
+      
+      const stillHasActiveBooking = updatedBookings.some(booking => 
+        booking.id !== bookingId && 
+        booking.status !== 'cancelled' && 
+        booking.status !== 'completed'
+      );
+      
+      setHasActiveBooking(stillHasActiveBooking);
       
       // If authenticated, update in Supabase
       if (isAuthenticated && user) {
@@ -390,12 +584,17 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         userPackages,
         bookings,
+        packageGroups,
+        currentPackageGroup,
         addToPackage,
         removeFromPackage,
         createVRBooking,
         cancelBooking,
         isInPackage,
         requestQuote,
+        createPackageGroup,
+        setCurrentPackageGroup,
+        hasActiveBooking
       }}
     >
       {children}

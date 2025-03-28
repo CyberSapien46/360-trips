@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
 import { useTravel } from '@/context/TravelContext';
 
@@ -51,7 +52,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const VRBookingForm: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
-  const { createVRBooking } = useTravel();
+  const { createVRBooking, hasActiveBooking, bookings } = useTravel();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<FormValues>({
@@ -61,25 +62,29 @@ const VRBookingForm: React.FC = () => {
     },
   });
   
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     if (!isAuthenticated || !user) {
       return;
     }
     
     setIsSubmitting(true);
     
-    setTimeout(() => {
-      createVRBooking({
+    try {
+      await createVRBooking({
         userId: user.id,
         date: format(data.date, 'yyyy-MM-dd'),
         time: data.time,
         address: data.address,
         status: 'confirmed',
+        additionalNotes: data.additionalNotes
       });
       
       form.reset();
+    } catch (error) {
+      console.error('Booking creation failed:', error);
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
   
   const timeSlots = [
@@ -90,129 +95,158 @@ const VRBookingForm: React.FC = () => {
     "5:00 PM - 7:00 PM",
   ];
 
+  // Find active booking details for display
+  const activeBooking = bookings.find(booking => 
+    booking.status !== 'cancelled' && booking.status !== 'completed'
+  );
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "justify-start text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Select date</span>
-                        )}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  Choose the date for your VR experience.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Time Slot</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a time slot" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>
-                        <div className="flex items-center">
-                          <Clock className="mr-2 h-4 w-4" />
-                          <span>{slot}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Select a preferred time slot for your appointment.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <>
+      {hasActiveBooking && activeBooking ? (
+        <div className="mb-8">
+          <Alert variant="warning">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Booking Limit Reached</AlertTitle>
+            <AlertDescription>
+              You already have an active booking scheduled for {activeBooking.date} at {activeBooking.time}. 
+              You can only have one active booking at a time. Please cancel your existing booking or wait until it's completed to book another VR experience.
+            </AlertDescription>
+          </Alert>
+          <div className="mt-4 text-center">
+            <Button 
+              variant="outline" 
+              className="mr-2"
+              onClick={() => window.location.href = '/profile'}
+            >
+              View My Bookings
+            </Button>
+          </div>
         </div>
-        
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Your Address</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter your full address" {...field} />
-              </FormControl>
-              <FormDescription>
-                We'll send our VR equipment to this address.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="additionalNotes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Additional Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Any special requirements or questions?"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Processing..." : "Book VR Experience"}
-        </Button>
-      </form>
-    </Form>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Select date</span>
+                            )}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Choose the date for your VR experience.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Time Slot</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a time slot" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {timeSlots.map((slot) => (
+                          <SelectItem key={slot} value={slot}>
+                            <div className="flex items-center">
+                              <Clock className="mr-2 h-4 w-4" />
+                              <span>{slot}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select a preferred time slot for your appointment.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your full address" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    We'll send our VR equipment to this address.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="additionalNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Additional Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Any special requirements or questions?"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Processing..." : "Book VR Experience"}
+            </Button>
+          </form>
+        </Form>
+      )}
+    </>
   );
 };
 

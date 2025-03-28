@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      package_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -62,21 +83,35 @@ export type Database = {
           created_at: string
           destination_id: string
           id: string
+          package_group_id: string | null
+          package_name: string
           user_id: string
         }
         Insert: {
           created_at?: string
           destination_id: string
           id?: string
+          package_group_id?: string | null
+          package_name?: string
           user_id: string
         }
         Update: {
           created_at?: string
           destination_id?: string
           id?: string
+          package_group_id?: string | null
+          package_name?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_package_group"
+            columns: ["package_group_id"]
+            isOneToOne: false
+            referencedRelation: "package_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vr_bookings: {
         Row: {
