@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import DestinationCard from '@/components/destinations/DestinationCard';
 import VideoModal from '@/components/destinations/VideoModal';
@@ -13,13 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Globe, Search } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Globe, Search, Filter } from 'lucide-react';
 
 const Destinations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [videoUrl, setVideoUrl] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'rating' | ''>('');
   
   const handleOpenVideo = (url: string) => {
     setVideoUrl(url);
@@ -30,21 +32,41 @@ const Destinations = () => {
     setIsVideoModalOpen(false);
   };
   
-  const filteredDestinations = destinations.filter(dest => {
+  // Extract unique countries from location information
+  const countries = Array.from(new Set(destinations.map(dest => {
+    const parts = dest.location.split(',');
+    return parts[parts.length - 1].trim();
+  }))).sort();
+  
+  // Filter destinations based on search query and selected region
+  let filteredDestinations = destinations.filter(dest => {
     const matchesSearch = dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesRegion = selectedRegion === 'all' || dest.location.includes(selectedRegion);
+    const matchesRegion = selectedRegion === 'all' || 
+                          dest.location.split(',').map(part => part.trim()).includes(selectedRegion) ||
+                          dest.location.includes(selectedRegion);
     
     return matchesSearch && matchesRegion;
   });
   
-  const regions = Array.from(new Set(destinations.map(dest => {
-    // Extract the country/region from the location
-    const parts = dest.location.split(',');
-    return parts[parts.length - 1].trim();
-  })));
+  // Sort filtered destinations based on selected sort method
+  if (sortBy) {
+    filteredDestinations = [...filteredDestinations].sort((a, b) => {
+      if (sortBy === 'price-low') return a.price - b.price;
+      if (sortBy === 'price-high') return b.price - a.price;
+      if (sortBy === 'rating') return b.rating - a.rating;
+      return 0;
+    });
+  }
+
+  // Count destinations by country for display in filter dropdown
+  const countryCount = countries.reduce((acc, country) => {
+    const count = destinations.filter(d => d.location.includes(country)).length;
+    acc[country] = count;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <MainLayout>
@@ -83,12 +105,31 @@ const Destinations = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Regions</SelectItem>
-                    {regions.map(region => (
-                      <SelectItem key={region} value={region}>
-                        {region}
+                    <SelectItem value="all">All Regions ({destinations.length})</SelectItem>
+                    {countries.map(country => (
+                      <SelectItem key={country} value={country}>
+                        {country} ({countryCount[country]})
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full md:w-64">
+                <Select 
+                  value={sortBy} 
+                  onValueChange={(value: 'price-low' | 'price-high' | 'rating' | '') => setSortBy(value)}
+                >
+                  <SelectTrigger>
+                    <div className="flex items-center">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Sort by" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Most Relevant</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -96,6 +137,7 @@ const Destinations = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedRegion('all');
+                  setSortBy('');
                 }}
                 variant="outline"
                 className="md:w-auto"
@@ -115,21 +157,32 @@ const Destinations = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedRegion('all');
+                  setSortBy('');
                 }}
               >
                 View All Destinations
               </Button>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredDestinations.map((destination) => (
-                <DestinationCard
-                  key={destination.id}
-                  destination={destination}
-                  onOpenVideo={handleOpenVideo}
-                />
-              ))}
-            </div>
+            <>
+              <Alert className="mb-6" variant="default">
+                <AlertDescription>
+                  Showing {filteredDestinations.length} {filteredDestinations.length === 1 ? 'destination' : 'destinations'}
+                  {selectedRegion !== 'all' ? ` in ${selectedRegion}` : ''}
+                  {sortBy ? ` sorted by ${sortBy.replace('-', ' ')}` : ''}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredDestinations.map((destination) => (
+                  <DestinationCard
+                    key={destination.id}
+                    destination={destination}
+                    onOpenVideo={handleOpenVideo}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </section>
