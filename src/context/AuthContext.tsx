@@ -1,197 +1,134 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from '@/components/ui/use-toast';
 import axios from 'axios';
 
-// Simple admin check 
-const ADMIN_EMAILS = ['admin@example.com']; 
-
-type UserProfile = {
+// Define types
+type User = {
   id: string;
   name: string;
   email: string;
-  photoUrl: string | null;
-  isAdmin: boolean;
+  photoUrl?: string;
 };
 
 type AuthContextType = {
-  user: UserProfile | null;
+  user: User | null;
   isAuthenticated: boolean;
-  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
 };
 
+// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// Provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
-// Set axios defaults for auth
-axios.defaults.baseURL = 'http://localhost:5000/api';
-axios.defaults.headers.post['Content-Type'] = 'application/json';
-
-// Add token to requests if available
-const setAuthToken = (token: string | null) => {
+  // Configure axios
   if (token) {
     axios.defaults.headers.common['x-auth-token'] = token;
-    localStorage.setItem('token', token);
   } else {
     delete axios.defaults.headers.common['x-auth-token'];
-    localStorage.removeItem('token');
   }
-};
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  // Load user on initial render if token exists
+  // Load user on first render
   useEffect(() => {
     const loadUser = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        setAuthToken(token);
-        try {
-          const res = await axios.get('/users/me');
-          
-          const userData = res.data;
-          const isAdmin = ADMIN_EMAILS.includes(userData.email);
-          
-          setUser({
-            id: userData._id,
-            name: userData.name,
-            email: userData.email,
-            photoUrl: userData.photoUrl,
-            isAdmin
-          });
-        } catch (error) {
-          console.error('Error loading user:', error);
-          setAuthToken(null);
-        }
+      if (!token) {
+        setIsLoading(false);
+        return;
       }
-      
-      setIsLoading(false);
+
+      try {
+        const res = await axios.get('/api/users/me');
+        setUser({
+          id: res.data._id,
+          name: res.data.name,
+          email: res.data.email,
+          photoUrl: res.data.photoUrl,
+        });
+        setIsAuthenticated(true);
+      } catch (err) {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
+
     loadUser();
-  }, []);
+  }, [token]);
 
+  // Register user
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      const res = await axios.post('/api/users', { name, email, password });
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      await loadUser();
+      return Promise.resolve();
+    } catch (err: any) {
+      console.error('Registration error:', err.response?.data?.msg || err.message);
+      return Promise.reject(err.response?.data?.msg || 'Registration failed');
+    }
+  };
+
+  // Login user
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
-      const res = await axios.post('/users/login', { email, password });
-      
-      const { token } = res.data;
-      setAuthToken(token);
-      
-      // Fetch user data
-      const userRes = await axios.get('/users/me');
-      const userData = userRes.data;
-      const isAdmin = ADMIN_EMAILS.includes(userData.email);
-      
-      setUser({
-        id: userData._id,
-        name: userData.name,
-        email: userData.email,
-        photoUrl: userData.photoUrl,
-        isAdmin
-      });
-      
-      toast({
-        title: "Success",
-        description: "Login successful",
-      });
-      
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setAuthToken(null);
-      
-      toast({
-        title: "Login failed",
-        description: error.response?.data?.msg || "An unknown error occurred",
-        variant: "destructive",
-      });
-      
-      throw error;
-    } finally {
-      setIsLoading(false);
+      const res = await axios.post('/api/users/login', { email, password });
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      await loadUser();
+      return Promise.resolve();
+    } catch (err: any) {
+      console.error('Login error:', err.response?.data?.msg || err.message);
+      return Promise.reject(err.response?.data?.msg || 'Login failed');
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await axios.post('/users/register', { name, email, password });
-      
-      toast({
-        title: "Account created",
-        description: "Your account has been successfully created. You can now log in.",
-      });
-      
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      
-      toast({
-        title: "Signup failed",
-        description: error.response?.data?.msg || "An unknown error occurred",
-        variant: "destructive",
-      });
-      
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Logout user
   const logout = () => {
-    setAuthToken(null);
+    localStorage.removeItem('token');
+    setToken(null);
     setUser(null);
-    
-    toast({
-      title: "Logged out",
-      description: "You've been successfully logged out",
-    });
+    setIsAuthenticated(false);
   };
 
-  const updateProfile = async (data: Partial<UserProfile>) => {
-    setIsLoading(true);
+  // Update user profile
+  const updateProfile = async (data: Partial<User>) => {
     try {
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      
-      const res = await axios.put('/users/profile', {
-        name: data.name,
-        photoUrl: data.photoUrl
+      const res = await axios.put('/api/users/me', data);
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      return Promise.resolve();
+    } catch (err: any) {
+      console.error('Update profile error:', err.response?.data?.msg || err.message);
+      return Promise.reject(err.response?.data?.msg || 'Update failed');
+    }
+  };
+
+  // Load user helper function
+  const loadUser = async () => {
+    try {
+      const res = await axios.get('/api/users/me');
+      setUser({
+        id: res.data._id,
+        name: res.data.name,
+        email: res.data.email,
+        photoUrl: res.data.photoUrl,
       });
-      
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
-      
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Update failed",
-        description: error.response?.data?.msg || "An unknown error occurred",
-        variant: "destructive",
-      });
-      
-      throw error;
-    } finally {
-      setIsLoading(false);
+      setIsAuthenticated(true);
+    } catch (err) {
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 
@@ -199,11 +136,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
-        isAdmin: user?.isAdmin || false,
+        isAuthenticated,
         isLoading,
         login,
-        signup,
+        register,
         logout,
         updateProfile,
       }}
@@ -211,4 +147,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Hook for using the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

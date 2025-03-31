@@ -8,6 +8,7 @@ const destinationsRoutes = require('./routes/destinations');
 const userRoutes = require('./routes/users');
 const packageRoutes = require('./routes/packages');
 const bookingRoutes = require('./routes/bookings');
+const quoteRoutes = require('./routes/quotes');
 
 // Load environment variables
 dotenv.config();
@@ -29,13 +30,14 @@ app.use('/api/destinations', destinationsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/quotes', quoteRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('dist'));
+  app.use(express.static('client/build'));
   
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
   });
 }
 

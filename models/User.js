@@ -17,12 +17,7 @@ const UserSchema = new mongoose.Schema({
     required: true
   },
   photoUrl: {
-    type: String,
-    default: null
-  },
-  isAdmin: {
-    type: Boolean,
-    default: false
+    type: String
   },
   createdAt: {
     type: Date,
