@@ -36,6 +36,7 @@ interface TravelContextType {
   packageGroups: PackageGroup[];
   currentPackageGroup: PackageGroup | null;
   bookings: Booking[];
+  hasActiveBooking: boolean;
   setCurrentPackageGroup: (group: PackageGroup) => void;
   addToPackage: (destinationId: string) => void;
   removeFromPackage: (destinationId: string) => void;
@@ -43,6 +44,7 @@ interface TravelContextType {
   createPackageGroup: (name: string) => Promise<void>;
   requestQuote: () => Promise<void>;
   createBooking: (bookingData: Omit<Booking, 'id' | 'status'>) => Promise<void>;
+  createVRBooking: (bookingData: any) => Promise<void>;
   cancelBooking: (bookingId: string) => Promise<void>;
 }
 
@@ -58,6 +60,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [packageGroups, setPackageGroups] = useState<PackageGroup[]>([]);
   const [currentPackageGroup, setCurrentPackageGroup] = useState<PackageGroup | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
   // Load user's packages
   useEffect(() => {
@@ -69,8 +72,18 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setUserPackages([]);
       setPackageGroups([]);
       setBookings([]);
+      setHasActiveBooking(false);
     }
   }, [isAuthenticated, user]);
+
+  // Check for active bookings whenever bookings change
+  useEffect(() => {
+    // Check if user has any active bookings (not cancelled or completed)
+    const active = bookings.some(booking => 
+      booking.status !== 'cancelled' && booking.status !== 'completed'
+    );
+    setHasActiveBooking(active);
+  }, [bookings]);
 
   const fetchUserPackages = async () => {
     try {
@@ -252,6 +265,42 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Add missing createVRBooking method
+  const createVRBooking = async (bookingData: any): Promise<void> => {
+    try {
+      const res = await axios.post('/api/bookings', {
+        date: bookingData.date,
+        time: bookingData.time,
+        address: bookingData.address,
+        additionalNotes: bookingData.additionalNotes
+      });
+      
+      const newBooking: Booking = {
+        id: res.data._id,
+        date: res.data.date,
+        time: res.data.time,
+        address: res.data.address,
+        status: res.data.status,
+        additionalNotes: res.data.additionalNotes
+      };
+      
+      setBookings(prev => [...prev, newBooking]);
+      
+      toast({
+        title: "VR Booking Confirmed",
+        description: `Your VR experience has been scheduled for ${bookingData.date}`,
+      });
+    } catch (err) {
+      console.error('Error creating VR booking:', err);
+      toast({
+        title: "Error",
+        description: "Failed to create VR booking",
+        variant: "destructive"
+      });
+      throw err;
+    }
+  };
+
   const cancelBooking = async (bookingId: string): Promise<void> => {
     try {
       await axios.delete(`/api/bookings/${bookingId}`);
@@ -278,6 +327,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         packageGroups,
         currentPackageGroup,
         bookings,
+        hasActiveBooking,
         setCurrentPackageGroup,
         addToPackage,
         removeFromPackage,
@@ -285,6 +335,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         createPackageGroup,
         requestQuote,
         createBooking,
+        createVRBooking,
         cancelBooking
       }}
     >

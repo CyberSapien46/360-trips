@@ -8,14 +8,16 @@ type User = {
   name: string;
   email: string;
   photoUrl?: string;
+  isAdmin?: boolean;
 };
 
 type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
 };
@@ -29,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Configure axios
   if (token) {
@@ -52,13 +55,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: res.data.name,
           email: res.data.email,
           photoUrl: res.data.photoUrl,
+          isAdmin: res.data.isAdmin
         });
         setIsAuthenticated(true);
+        setIsAdmin(!!res.data.isAdmin);
       } catch (err) {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
         setIsAuthenticated(false);
+        setIsAdmin(false);
       } finally {
         setIsLoading(false);
       }
@@ -67,8 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, [token]);
 
-  // Register user
-  const register = async (name: string, email: string, password: string) => {
+  // Register user (renamed to signup to match RegisterForm)
+  const signup = async (name: string, email: string, password: string) => {
     try {
       const res = await axios.post('/api/users', { name, email, password });
       localStorage.setItem('token', res.data.token);
@@ -101,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   // Update user profile
@@ -124,11 +131,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: res.data.name,
         email: res.data.email,
         photoUrl: res.data.photoUrl,
+        isAdmin: res.data.isAdmin
       });
       setIsAuthenticated(true);
+      setIsAdmin(!!res.data.isAdmin);
     } catch (err) {
       setUser(null);
       setIsAuthenticated(false);
+      setIsAdmin(false);
     }
   };
 
@@ -138,8 +148,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated,
         isLoading,
+        isAdmin,
         login,
-        register,
+        signup,
         logout,
         updateProfile,
       }}
