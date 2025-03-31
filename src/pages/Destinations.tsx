@@ -21,7 +21,7 @@ const Destinations = () => {
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [videoUrl, setVideoUrl] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'rating' | ''>('');
+  const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'rating' | 'relevant'>('relevant');
   
   const handleOpenVideo = (url: string) => {
     setVideoUrl(url);
@@ -117,7 +117,7 @@ const Destinations = () => {
               <div className="w-full md:w-64">
                 <Select 
                   value={sortBy} 
-                  onValueChange={(value: 'price-low' | 'price-high' | 'rating' | '') => setSortBy(value)}
+                  onValueChange={(value: 'price-low' | 'price-high' | 'rating' | 'relevant') => setSortBy(value)}
                 >
                   <SelectTrigger>
                     <div className="flex items-center">
@@ -126,7 +126,7 @@ const Destinations = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Most Relevant</SelectItem>
+                    <SelectItem value="relevant">Most Relevant</SelectItem>
                     <SelectItem value="price-low">Price: Low to High</SelectItem>
                     <SelectItem value="price-high">Price: High to Low</SelectItem>
                     <SelectItem value="rating">Highest Rated</SelectItem>
@@ -137,7 +137,7 @@ const Destinations = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedRegion('all');
-                  setSortBy('');
+                  setSortBy('relevant');
                 }}
                 variant="outline"
                 className="md:w-auto"
@@ -157,7 +157,7 @@ const Destinations = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedRegion('all');
-                  setSortBy('');
+                  setSortBy('relevant');
                 }}
               >
                 View All Destinations
@@ -169,7 +169,7 @@ const Destinations = () => {
                 <AlertDescription>
                   Showing {filteredDestinations.length} {filteredDestinations.length === 1 ? 'destination' : 'destinations'}
                   {selectedRegion !== 'all' ? ` in ${selectedRegion}` : ''}
-                  {sortBy ? ` sorted by ${sortBy.replace('-', ' ')}` : ''}
+                  {sortBy !== 'relevant' ? ` sorted by ${sortBy.replace('-', ' ')}` : ''}
                 </AlertDescription>
               </Alert>
               
