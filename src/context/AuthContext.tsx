@@ -34,13 +34,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Configure axios
-  if (token) {
-    axios.defaults.headers.common['x-auth-token'] = token;
-  } else {
-    delete axios.defaults.headers.common['x-auth-token'];
-  }
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['x-auth-token'] = token;
+    } else {
+      delete axios.defaults.headers.common['x-auth-token'];
+    }
+  }, [token]);
 
-  // Load user on first render
+  // Load user on first render or when token changes
   useEffect(() => {
     const loadUser = async () => {
       if (!token) {
@@ -60,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(true);
         setIsAdmin(!!res.data.isAdmin);
       } catch (err) {
+        console.error('Error loading user:', err);
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
@@ -73,13 +76,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, [token]);
 
-  // Register user (renamed to signup to match RegisterForm)
+  // Register user
   const signup = async (name: string, email: string, password: string) => {
     try {
       const res = await axios.post('/api/users', { name, email, password });
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
-      await loadUser();
+      
+      // The loadUser effect will trigger after setToken
       return Promise.resolve();
     } catch (err: any) {
       console.error('Registration error:', err.response?.data?.msg || err.message);
@@ -93,7 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await axios.post('/api/users/login', { email, password });
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
-      await loadUser();
+      
+      // The loadUser effect will trigger after setToken
       return Promise.resolve();
     } catch (err: any) {
       console.error('Login error:', err.response?.data?.msg || err.message);
@@ -119,26 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Update profile error:', err.response?.data?.msg || err.message);
       return Promise.reject(err.response?.data?.msg || 'Update failed');
-    }
-  };
-
-  // Load user helper function
-  const loadUser = async () => {
-    try {
-      const res = await axios.get('/api/users/me');
-      setUser({
-        id: res.data._id,
-        name: res.data.name,
-        email: res.data.email,
-        photoUrl: res.data.photoUrl,
-        isAdmin: res.data.isAdmin
-      });
-      setIsAuthenticated(true);
-      setIsAdmin(!!res.data.isAdmin);
-    } catch (err) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsAdmin(false);
     }
   };
 
