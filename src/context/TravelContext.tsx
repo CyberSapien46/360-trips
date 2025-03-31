@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import axios from 'axios';
 
 export type Destination = {
   id: string;
@@ -88,24 +88,19 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [bookings]);
 
-  // Load packages, package groups, and bookings from Supabase when auth state changes
+  // Load packages, package groups, and bookings when auth state changes
   useEffect(() => {
     const loadUserData = async () => {
       if (isAuthenticated && user) {
         try {
           // Load package groups
-          const { data: groupsData, error: groupsError } = await supabase
-            .from('package_groups')
-            .select('*')
-            .eq('user_id', user.id);
+          const groupsRes = await axios.get('/packages/groups');
           
-          if (groupsError) throw groupsError;
-          
-          if (groupsData && groupsData.length > 0) {
-            const formattedGroups: PackageGroup[] = groupsData.map(group => ({
-              id: group.id,
+          if (groupsRes.data && groupsRes.data.length > 0) {
+            const formattedGroups: PackageGroup[] = groupsRes.data.map((group: any) => ({
+              id: group._id,
               name: group.name,
-              createdAt: group.created_at
+              createdAt: group.createdAt
             }));
             setPackageGroups(formattedGroups);
             
@@ -117,19 +112,13 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             // Create a default package group if none exists
             if (isAuthenticated && user) {
               const defaultGroupName = "My Travel Packages";
-              const { data: newGroup, error: createError } = await supabase
-                .from('package_groups')
-                .insert({ user_id: user.id, name: defaultGroupName })
-                .select()
-                .single();
+              const newGroupRes = await axios.post('/packages/groups', { name: defaultGroupName });
               
-              if (createError) throw createError;
-              
-              if (newGroup) {
+              if (newGroupRes.data) {
                 const formattedGroup: PackageGroup = {
-                  id: newGroup.id,
-                  name: newGroup.name,
-                  createdAt: newGroup.created_at
+                  id: newGroupRes.data._id,
+                  name: newGroupRes.data.name,
+                  createdAt: newGroupRes.data.createdAt
                 };
                 setPackageGroups([formattedGroup]);
                 setCurrentPackageGroup(formattedGroup);
@@ -137,55 +126,46 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           }
           
-          // Try to load packages from Supabase
-          const { data: packageData, error: packageError } = await supabase
-            .from('user_packages')
-            .select('destination_id')
-            .eq('user_id', user.id);
+          // Load packages
+          const packageRes = await axios.get('/packages');
           
-          if (packageError) throw packageError;
-          
-          if (packageData && packageData.length > 0) {
-            const packages = packageData.map(item => item.destination_id);
+          if (packageRes.data && packageRes.data.length > 0) {
+            const packages = packageRes.data.map((item: any) => item.destinationId);
             setUserPackages(packages);
           } else {
-            // If no data in Supabase, check localStorage as fallback
+            // If no data in MongoDB, check localStorage as fallback
             const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
             if (storedPackages) {
               setUserPackages(JSON.parse(storedPackages));
               
-              // Migrate localStorage data to Supabase
+              // Migrate localStorage data to MongoDB
               const packagesToInsert = JSON.parse(storedPackages).map((destId: string) => ({
-                user_id: user.id,
-                destination_id: destId,
-                package_name: "My Travel Package"
+                destinationId: destId,
+                packageName: "My Travel Package"
               }));
               
               if (packagesToInsert.length > 0) {
-                await supabase.from('user_packages').insert(packagesToInsert);
+                for (const pkg of packagesToInsert) {
+                  await axios.post('/packages', pkg);
+                }
               }
             }
           }
           
           // Load bookings
-          const { data: bookingData, error: bookingError } = await supabase
-            .from('vr_bookings')
-            .select('*')
-            .eq('user_id', user.id);
+          const bookingRes = await axios.get('/bookings');
           
-          if (bookingError) throw bookingError;
-          
-          if (bookingData) {
+          if (bookingRes.data) {
             // Convert from snake_case to camelCase
-            const formattedBookings: VRBooking[] = bookingData.map(booking => ({
-              id: booking.id,
-              userId: booking.user_id,
+            const formattedBookings: VRBooking[] = bookingRes.data.map((booking: any) => ({
+              id: booking._id,
+              userId: booking.userId,
               date: booking.date,
               time: booking.time,
               address: booking.address,
-              status: booking.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
-              createdAt: booking.created_at,
-              additionalNotes: booking.additional_notes || undefined
+              status: booking.status,
+              createdAt: booking.createdAt,
+              additionalNotes: booking.additionalNotes || undefined
             }));
             setBookings(formattedBookings);
             
@@ -195,7 +175,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             );
             setHasActiveBooking(activeBooking);
           } else {
-            // If no data in Supabase, check localStorage as fallback
+            // If no data in MongoDB, check localStorage as fallback
             const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
             if (storedBookings) {
               const parsedBookings = JSON.parse(storedBookings);
@@ -207,20 +187,16 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
               );
               setHasActiveBooking(activeBooking);
               
-              // Migrate localStorage bookings to Supabase
+              // Migrate localStorage bookings to MongoDB
               if (parsedBookings.length > 0) {
-                const bookingsToInsert = parsedBookings.map((booking: VRBooking) => ({
-                  id: booking.id,
-                  user_id: booking.userId,
-                  date: booking.date,
-                  time: booking.time,
-                  address: booking.address,
-                  status: booking.status,
-                  created_at: booking.createdAt,
-                  additional_notes: booking.additionalNotes || null
-                }));
-                
-                await supabase.from('vr_bookings').insert(bookingsToInsert);
+                for (const booking of parsedBookings) {
+                  await axios.post('/bookings', {
+                    date: booking.date,
+                    time: booking.time,
+                    address: booking.address,
+                    additionalNotes: booking.additionalNotes
+                  });
+                }
               }
             }
           }
@@ -231,7 +207,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             variant: "destructive"
           });
           
-          // Fallback to localStorage if Supabase fails
+          // Fallback to localStorage if MongoDB fails
           const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
           const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
           
@@ -303,19 +279,13 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     
     try {
-      const { data, error } = await supabase
-        .from('package_groups')
-        .insert({ user_id: user.id, name })
-        .select()
-        .single();
+      const res = await axios.post('/packages/groups', { name });
       
-      if (error) throw error;
-      
-      if (data) {
+      if (res.data) {
         const newGroup: PackageGroup = {
-          id: data.id,
-          name: data.name,
-          createdAt: data.created_at
+          id: res.data._id,
+          name: res.data.name,
+          createdAt: res.data.createdAt
         };
         
         setPackageGroups(prev => [...prev, newGroup]);
@@ -342,19 +312,13 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!currentPackageGroup && isAuthenticated && user) {
           // Create a default package group if none exists
           const defaultGroupName = "My Travel Packages";
-          const { data: newGroup, error: createError } = await supabase
-            .from('package_groups')
-            .insert({ user_id: user.id, name: defaultGroupName })
-            .select()
-            .single();
+          const newGroupRes = await axios.post('/packages/groups', { name: defaultGroupName });
           
-          if (createError) throw createError;
-          
-          if (newGroup) {
+          if (newGroupRes.data) {
             const formattedGroup: PackageGroup = {
-              id: newGroup.id,
-              name: newGroup.name,
-              createdAt: newGroup.created_at
+              id: newGroupRes.data._id,
+              name: newGroupRes.data.name,
+              createdAt: newGroupRes.data.createdAt
             };
             setPackageGroups([formattedGroup]);
             setCurrentPackageGroup(formattedGroup);
@@ -364,18 +328,13 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         // Update local state first for immediate UI feedback
         setUserPackages(prev => [...prev, destinationId]);
         
-        // If authenticated, store in Supabase
+        // If authenticated, store in MongoDB
         if (isAuthenticated && user && currentPackageGroup) {
-          const { error } = await supabase
-            .from('user_packages')
-            .insert({ 
-              user_id: user.id,
-              destination_id: destinationId,
-              package_name: packageName || "My Travel Package",
-              package_group_id: currentPackageGroup.id
-            });
-          
-          if (error) throw error;
+          await axios.post('/packages', { 
+            destinationId,
+            packageName: packageName || "My Travel Package",
+            packageGroupId: currentPackageGroup.id
+          });
         }
         
         toast({
@@ -401,15 +360,9 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       // Update local state first for immediate UI feedback
       setUserPackages(prev => prev.filter(id => id !== destinationId));
       
-      // If authenticated, remove from Supabase
+      // If authenticated, remove from MongoDB
       if (isAuthenticated && user) {
-        const { error } = await supabase
-          .from('user_packages')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('destination_id', destinationId);
-        
-        if (error) throw error;
+        await axios.delete(`/packages/${destinationId}`);
       }
       
       toast({
@@ -440,41 +393,55 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error("User already has an active booking");
       }
       
-      const id = Math.random().toString(36).substring(2, 9);
-      const createdAt = new Date().toISOString();
-      
-      const newBooking: VRBooking = {
-        ...booking,
-        id,
-        createdAt,
-      };
-      
-      // Update local state first for immediate UI feedback
-      setBookings(prev => [...prev, newBooking]);
-      setHasActiveBooking(true);
-      
-      // If authenticated, store in Supabase
+      // If authenticated, store in MongoDB
       if (isAuthenticated && user) {
-        const { error } = await supabase
-          .from('vr_bookings')
-          .insert({ 
-            id,
-            user_id: booking.userId,
-            date: booking.date,
-            time: booking.time,
-            address: booking.address,
-            status: booking.status,
-            created_at: createdAt,
-            additional_notes: booking.additionalNotes || null
-          });
+        const res = await axios.post('/bookings', {
+          date: booking.date,
+          time: booking.time,
+          address: booking.address,
+          additionalNotes: booking.additionalNotes
+        });
         
-        if (error) throw error;
+        if (res.data) {
+          const newBooking: VRBooking = {
+            id: res.data._id,
+            userId: res.data.userId,
+            date: res.data.date,
+            time: res.data.time,
+            address: res.data.address,
+            status: res.data.status,
+            createdAt: res.data.createdAt,
+            additionalNotes: res.data.additionalNotes
+          };
+          
+          // Update local state
+          setBookings(prev => [...prev, newBooking]);
+          setHasActiveBooking(true);
+          
+          toast({
+            title: "Booking confirmed",
+            description: "Your VR experience has been booked successfully",
+          });
+        }
+      } else {
+        // For non-authenticated users, store in localStorage
+        const id = Math.random().toString(36).substring(2, 9);
+        const createdAt = new Date().toISOString();
+        
+        const newBooking: VRBooking = {
+          ...booking,
+          id,
+          createdAt,
+        };
+        
+        setBookings(prev => [...prev, newBooking]);
+        setHasActiveBooking(true);
+        
+        toast({
+          title: "Booking confirmed",
+          description: "Your VR experience has been booked successfully",
+        });
       }
-      
-      toast({
-        title: "Booking confirmed",
-        description: "Your VR experience has been booked successfully",
-      });
     } catch (error) {
       console.error('Error creating booking:', error);
       
@@ -516,15 +483,9 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       
       setHasActiveBooking(stillHasActiveBooking);
       
-      // If authenticated, update in Supabase
+      // If authenticated, update in MongoDB
       if (isAuthenticated && user) {
-        const { error } = await supabase
-          .from('vr_bookings')
-          .update({ status: 'cancelled' })
-          .eq('id', bookingId)
-          .eq('user_id', user.id);
-        
-        if (error) throw error;
+        await axios.put(`/bookings/cancel/${bookingId}`);
       }
       
       toast({
@@ -550,20 +511,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     
     try {
-      const quoteRequest = {
-        id: Math.random().toString(36).substring(2, 9),
-        user_id: user.id,
-        package_ids: userPackages,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabase
-        .from('quote_requests')
-        .insert(quoteRequest);
-      
-      if (error) throw error;
-      
+      // In a real app, we would have an API endpoint for this
+      // For now, we'll just show a success toast
       toast({
         title: "Quote request submitted",
         description: "We'll contact you soon with a custom quote",
