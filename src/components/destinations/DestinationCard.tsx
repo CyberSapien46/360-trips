@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface DestinationCardProps {
-  destination: Destination;
+  destination: Destination & { priceDisplay?: string };
   onOpenVideo: (url: string) => void;
 }
 
@@ -50,7 +50,7 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     if (!isAuthenticated) {
       toast({
         title: "Authentication required",
-        description: "Please log in to add destinations to your favorites",
+        description: "Please log in to add destinations to your favourites",
       });
       return;
     }
@@ -76,8 +76,8 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     
     toast({
       description: newLikedState 
-        ? `Added ${destination.name} to favorites` 
-        : `Removed ${destination.name} from favorites`,
+        ? `Added ${destination.name} to favourites` 
+        : `Removed ${destination.name} from favourites`,
     });
   };
   
@@ -159,7 +159,7 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
           {destination.description}
         </p>
         <div className="font-medium text-primary">
-          ${destination.price.toLocaleString()} per person
+          {destination.priceDisplay || `₹${Math.round(destination.price * 83).toLocaleString('en-IN')}`} per person
         </div>
       </CardContent>
       <CardFooter className="px-4 pb-4 pt-0">
