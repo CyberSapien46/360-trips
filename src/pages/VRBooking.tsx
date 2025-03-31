@@ -30,7 +30,7 @@ const VRBooking = () => {
             </h1>
             <p className="text-muted-foreground max-w-2xl">
               Experience our virtual travel destinations in stunning VR with our premium equipment
-              delivered and set up at your doorstep by our trained technicians.
+              delivered and set up at your location by our experienced technicians.
             </p>
           </div>
         </div>
@@ -49,7 +49,7 @@ const VRBooking = () => {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl shadow-subtle p-6 md:p-8">
                 <h2 className="text-2xl font-semibold mb-4">
-                  Book Your VR Demo Session
+                  Book Your VR Appointment
                 </h2>
                 
                 {isLoading ? (
@@ -81,11 +81,11 @@ const VRBooking = () => {
                   </h3>
                   <ul className="space-y-3">
                     {[
-                      "Professional setup of premium VR equipment at your home",
+                      "Professional setup of premium VR equipment at your location",
                       "A 2-hour guided virtual tour of your chosen destinations",
-                      "Travel expert to answer queries about destinations",
-                      "Assistance with holiday planning based on your experience",
-                      "Special discounts on package bookings for experienced destinations"
+                      "Expert travel advisor to answer questions",
+                      "Assistance with travel planning based on your experience",
+                      "Special discounts on bookings for experienced destinations"
                     ].map((item, index) => (
                       <li key={index} className="flex">
                         <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0" />
@@ -103,13 +103,13 @@ const VRBooking = () => {
                   </h3>
                   <div className="space-y-3 text-sm">
                     <p><strong>Duration:</strong> 2 hours</p>
-                    <p><strong>Price:</strong> ₹8,000 per session</p>
-                    <p><strong>Availability:</strong> 7 days a week, 10am-8pm</p>
+                    <p><strong>Price:</strong> $99 per session</p>
+                    <p><strong>Availability:</strong> 7 days a week, 9am-7pm</p>
                     <p><strong>Equipment:</strong> All equipment provided</p>
                     <p><strong>Requirements:</strong> Minimum 10x10 ft clear space</p>
                     <p><strong>Limit:</strong> One active booking per user</p>
                     <p className="text-muted-foreground mt-4">
-                      The fee will be fully refunded as travel credits if you book a holiday package within 30 days of your VR experience.
+                      The fee will be refunded in full if you book a vacation package within 30 days of your VR experience.
                     </p>
                   </div>
                 </CardContent>

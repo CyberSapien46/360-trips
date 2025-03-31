@@ -16,9 +16,6 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Globe, Search, Filter } from 'lucide-react';
 
-// Exchange rate: 1 USD = approximately 83 INR (as of mid-2024)
-const USD_TO_INR = 83;
-
 const Destinations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('all');
@@ -71,22 +68,17 @@ const Destinations = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  // Convert USD price to INR for display
-  const convertToINR = (priceUSD: number) => {
-    return Math.round(priceUSD * USD_TO_INR);
-  };
-
   return (
     <MainLayout>
       <section className="relative py-16 md:py-24 bg-muted">
         <div className="container">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Explore Dream Destinations
+              Explore Destinations
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience international and domestic destinations in virtual reality before booking your trip.
-              Travel smart by previewing your dream locations from the comfort of your home.
+              Discover amazing places around the world in virtual reality before planning your trip.
+              Experience the sights and sounds of your dream destinations from the comfort of your home.
             </p>
           </div>
           
@@ -95,7 +87,7 @@ const Destinations = () => {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                 <Input 
-                  placeholder="Search destinations by name or location..."
+                  placeholder="Search destinations..."
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,7 +126,7 @@ const Destinations = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevant">Most Popular</SelectItem>
+                    <SelectItem value="relevant">Most Relevant</SelectItem>
                     <SelectItem value="price-low">Price: Low to High</SelectItem>
                     <SelectItem value="price-high">Price: High to Low</SelectItem>
                     <SelectItem value="rating">Highest Rated</SelectItem>
@@ -185,10 +177,7 @@ const Destinations = () => {
                 {filteredDestinations.map((destination) => (
                   <DestinationCard
                     key={destination.id}
-                    destination={{
-                      ...destination,
-                      priceDisplay: `₹${convertToINR(destination.price).toLocaleString('en-IN')}`
-                    }}
+                    destination={destination}
                     onOpenVideo={handleOpenVideo}
                   />
                 ))}

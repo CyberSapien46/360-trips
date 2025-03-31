@@ -1,11 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { toast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// Types
-export interface Destination {
+export type Destination = {
   id: string;
   name: string;
   location: string;
@@ -14,309 +13,569 @@ export interface Destination {
   videoUrl: string;
   price: number;
   rating: number;
-}
+};
 
-export interface Booking {
+export type VRBooking = {
   id: string;
+  userId: string;
   date: string;
   time: string;
   address: string;
-  status: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  createdAt: string;
   additionalNotes?: string;
-}
+};
 
-export interface PackageGroup {
+export type QuoteRequest = {
+  id: string;
+  userId: string;
+  packageIds: string[];
+  status: 'pending' | 'contacted' | 'completed' | 'cancelled';
+  createdAt: string;
+};
+
+export type PackageGroup = {
   id: string;
   name: string;
-  userId: string;
-}
+  createdAt: string;
+};
 
-interface TravelContextType {
+type TravelContextType = {
   userPackages: string[];
+  bookings: VRBooking[];
   packageGroups: PackageGroup[];
   currentPackageGroup: PackageGroup | null;
-  bookings: Booking[];
-  hasActiveBooking: boolean;
-  setCurrentPackageGroup: (group: PackageGroup) => void;
-  addToPackage: (destinationId: string) => void;
+  addToPackage: (destinationId: string, packageName?: string) => void;
   removeFromPackage: (destinationId: string) => void;
-  isInPackage: (destinationId: string) => boolean;
-  createPackageGroup: (name: string) => Promise<void>;
-  requestQuote: () => Promise<void>;
-  createBooking: (bookingData: Omit<Booking, 'id' | 'status'>) => Promise<void>;
-  createVRBooking: (bookingData: any) => Promise<void>;
+  createVRBooking: (booking: Omit<VRBooking, 'id' | 'createdAt'>) => Promise<void>;
   cancelBooking: (bookingId: string) => Promise<void>;
-}
+  isInPackage: (destinationId: string) => boolean;
+  requestQuote: () => Promise<void>;
+  createPackageGroup: (name: string) => Promise<void>;
+  setCurrentPackageGroup: (packageGroup: PackageGroup | null) => void;
+  hasActiveBooking: boolean;
+};
 
-// Context
 const TravelContext = createContext<TravelContextType | undefined>(undefined);
 
-// Provider
-export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, user } = useAuth();
-  const { toast } = useToast();
-  
+export const useTravel = () => {
+  const context = useContext(TravelContext);
+  if (context === undefined) {
+    throw new Error('useTravel must be used within a TravelProvider');
+  }
+  return context;
+};
+
+export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
+  const { user, isAuthenticated } = useAuth();
   const [userPackages, setUserPackages] = useState<string[]>([]);
+  const [bookings, setBookings] = useState<VRBooking[]>([]);
   const [packageGroups, setPackageGroups] = useState<PackageGroup[]>([]);
   const [currentPackageGroup, setCurrentPackageGroup] = useState<PackageGroup | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
-  // Load user's packages
+  // Check if user has active bookings
   useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchUserPackages();
-      fetchPackageGroups();
-      fetchBookings();
+    if (bookings.length > 0) {
+      const activeBooking = bookings.some(booking => 
+        booking.status !== 'cancelled' && booking.status !== 'completed'
+      );
+      setHasActiveBooking(activeBooking);
     } else {
-      setUserPackages([]);
-      setPackageGroups([]);
-      setBookings([]);
       setHasActiveBooking(false);
     }
-  }, [isAuthenticated, user]);
-
-  // Check for active bookings whenever bookings change
-  useEffect(() => {
-    // Check if user has any active bookings (not cancelled or completed)
-    const active = bookings.some(booking => 
-      booking.status !== 'cancelled' && booking.status !== 'completed'
-    );
-    setHasActiveBooking(active);
   }, [bookings]);
 
-  const fetchUserPackages = async () => {
-    try {
-      const res = await axios.get('/api/packages');
-      setUserPackages(res.data.map((pkg: any) => pkg.destinationId));
-    } catch (err) {
-      console.error('Error fetching user packages:', err);
-    }
-  };
-
-  const fetchPackageGroups = async () => {
-    try {
-      const res = await axios.get('/api/packages/groups');
-      setPackageGroups(res.data.map((group: any) => ({
-        id: group._id,
-        name: group.name,
-        userId: group.userId
-      })));
-      
-      if (res.data.length > 0 && !currentPackageGroup) {
-        setCurrentPackageGroup({
-          id: res.data[0]._id,
-          name: res.data[0].name,
-          userId: res.data[0].userId
-        });
+  // Load packages, package groups, and bookings from Supabase when auth state changes
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (isAuthenticated && user) {
+        try {
+          // Load package groups
+          const { data: groupsData, error: groupsError } = await supabase
+            .from('package_groups')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          if (groupsError) throw groupsError;
+          
+          if (groupsData && groupsData.length > 0) {
+            const formattedGroups: PackageGroup[] = groupsData.map(group => ({
+              id: group.id,
+              name: group.name,
+              createdAt: group.created_at
+            }));
+            setPackageGroups(formattedGroups);
+            
+            // Set first group as current if none is selected
+            if (!currentPackageGroup) {
+              setCurrentPackageGroup(formattedGroups[0]);
+            }
+          } else {
+            // Create a default package group if none exists
+            if (isAuthenticated && user) {
+              const defaultGroupName = "My Travel Packages";
+              const { data: newGroup, error: createError } = await supabase
+                .from('package_groups')
+                .insert({ user_id: user.id, name: defaultGroupName })
+                .select()
+                .single();
+              
+              if (createError) throw createError;
+              
+              if (newGroup) {
+                const formattedGroup: PackageGroup = {
+                  id: newGroup.id,
+                  name: newGroup.name,
+                  createdAt: newGroup.created_at
+                };
+                setPackageGroups([formattedGroup]);
+                setCurrentPackageGroup(formattedGroup);
+              }
+            }
+          }
+          
+          // Try to load packages from Supabase
+          const { data: packageData, error: packageError } = await supabase
+            .from('user_packages')
+            .select('destination_id')
+            .eq('user_id', user.id);
+          
+          if (packageError) throw packageError;
+          
+          if (packageData && packageData.length > 0) {
+            const packages = packageData.map(item => item.destination_id);
+            setUserPackages(packages);
+          } else {
+            // If no data in Supabase, check localStorage as fallback
+            const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
+            if (storedPackages) {
+              setUserPackages(JSON.parse(storedPackages));
+              
+              // Migrate localStorage data to Supabase
+              const packagesToInsert = JSON.parse(storedPackages).map((destId: string) => ({
+                user_id: user.id,
+                destination_id: destId,
+                package_name: "My Travel Package"
+              }));
+              
+              if (packagesToInsert.length > 0) {
+                await supabase.from('user_packages').insert(packagesToInsert);
+              }
+            }
+          }
+          
+          // Load bookings
+          const { data: bookingData, error: bookingError } = await supabase
+            .from('vr_bookings')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          if (bookingError) throw bookingError;
+          
+          if (bookingData) {
+            // Convert from snake_case to camelCase
+            const formattedBookings: VRBooking[] = bookingData.map(booking => ({
+              id: booking.id,
+              userId: booking.user_id,
+              date: booking.date,
+              time: booking.time,
+              address: booking.address,
+              status: booking.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
+              createdAt: booking.created_at,
+              additionalNotes: booking.additional_notes || undefined
+            }));
+            setBookings(formattedBookings);
+            
+            // Check if user has any active bookings
+            const activeBooking = formattedBookings.some(booking => 
+              booking.status !== 'cancelled' && booking.status !== 'completed'
+            );
+            setHasActiveBooking(activeBooking);
+          } else {
+            // If no data in Supabase, check localStorage as fallback
+            const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
+            if (storedBookings) {
+              const parsedBookings = JSON.parse(storedBookings);
+              setBookings(parsedBookings);
+              
+              // Check if user has any active bookings
+              const activeBooking = parsedBookings.some((booking: VRBooking) => 
+                booking.status !== 'cancelled' && booking.status !== 'completed'
+              );
+              setHasActiveBooking(activeBooking);
+              
+              // Migrate localStorage bookings to Supabase
+              if (parsedBookings.length > 0) {
+                const bookingsToInsert = parsedBookings.map((booking: VRBooking) => ({
+                  id: booking.id,
+                  user_id: booking.userId,
+                  date: booking.date,
+                  time: booking.time,
+                  address: booking.address,
+                  status: booking.status,
+                  created_at: booking.createdAt,
+                  additional_notes: booking.additionalNotes || null
+                }));
+                
+                await supabase.from('vr_bookings').insert(bookingsToInsert);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          toast({
+            description: "Failed to load your travel data",
+            variant: "destructive"
+          });
+          
+          // Fallback to localStorage if Supabase fails
+          const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
+          const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
+          
+          if (storedPackages) {
+            setUserPackages(JSON.parse(storedPackages));
+          }
+          
+          if (storedBookings) {
+            const parsedBookings = JSON.parse(storedBookings);
+            setBookings(parsedBookings);
+            
+            // Check if user has any active bookings
+            const activeBooking = parsedBookings.some((booking: VRBooking) => 
+              booking.status !== 'cancelled' && booking.status !== 'completed'
+            );
+            setHasActiveBooking(activeBooking);
+          }
+        }
+      } else {
+        // Not authenticated, use anonymous storage
+        const storedPackages = localStorage.getItem('vr-travel-packages');
+        const storedBookings = localStorage.getItem('vr-travel-bookings');
+        
+        if (storedPackages) {
+          setUserPackages(JSON.parse(storedPackages));
+        }
+        
+        if (storedBookings) {
+          const parsedBookings = JSON.parse(storedBookings);
+          setBookings(parsedBookings);
+          
+          // Check if user has any active bookings
+          const activeBooking = parsedBookings.some((booking: VRBooking) => 
+            booking.status !== 'cancelled' && booking.status !== 'completed'
+          );
+          setHasActiveBooking(activeBooking);
+        }
       }
-    } catch (err) {
-      console.error('Error fetching package groups:', err);
-    }
-  };
+    };
+    
+    loadUserData();
+  }, [isAuthenticated, user, currentPackageGroup]);
 
-  const fetchBookings = async () => {
-    try {
-      const res = await axios.get('/api/bookings');
-      setBookings(res.data.map((booking: any) => ({
-        id: booking._id,
-        date: booking.date,
-        time: booking.time,
-        address: booking.address,
-        status: booking.status,
-        additionalNotes: booking.additionalNotes
-      })));
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
+  // Save to localStorage as fallback when state changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      localStorage.setItem(`vr-travel-packages-${user.id}`, JSON.stringify(userPackages));
+    } else {
+      localStorage.setItem('vr-travel-packages', JSON.stringify(userPackages));
     }
-  };
+  }, [userPackages, isAuthenticated, user]);
 
-  const addToPackage = async (destinationId: string) => {
-    if (!isAuthenticated) {
+  // Save bookings to localStorage as fallback
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      localStorage.setItem(`vr-travel-bookings-${user.id}`, JSON.stringify(bookings));
+    } else {
+      localStorage.setItem('vr-travel-bookings', JSON.stringify(bookings));
+    }
+  }, [bookings, isAuthenticated, user]);
+
+  const createPackageGroup = async (name: string) => {
+    if (!isAuthenticated || !user) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to add destinations to your package",
+        description: "You need to be logged in to create a package group",
+        variant: "destructive"
       });
       return;
     }
-
+    
     try {
-      const packageData = {
-        destinationId,
-        packageGroupId: currentPackageGroup?.id
-      };
+      const { data, error } = await supabase
+        .from('package_groups')
+        .insert({ user_id: user.id, name })
+        .select()
+        .single();
       
-      await axios.post('/api/packages', packageData);
-      setUserPackages(prev => [...prev, destinationId]);
+      if (error) throw error;
       
+      if (data) {
+        const newGroup: PackageGroup = {
+          id: data.id,
+          name: data.name,
+          createdAt: data.created_at
+        };
+        
+        setPackageGroups(prev => [...prev, newGroup]);
+        setCurrentPackageGroup(newGroup);
+        
+        toast({
+          title: "Package group created",
+          description: `Your new group "${name}" has been created`,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating package group:', error);
       toast({
-        description: `Added to your travel package`,
-      });
-    } catch (err) {
-      console.error('Error adding to package:', err);
-      toast({
-        title: "Error",
-        description: "Failed to add destination to package",
+        description: "Failed to create package group",
         variant: "destructive"
+      });
+    }
+  };
+
+  const addToPackage = async (destinationId: string, packageName?: string) => {
+    if (!userPackages.includes(destinationId)) {
+      try {
+        // Check if we have a current package group
+        if (!currentPackageGroup && isAuthenticated && user) {
+          // Create a default package group if none exists
+          const defaultGroupName = "My Travel Packages";
+          const { data: newGroup, error: createError } = await supabase
+            .from('package_groups')
+            .insert({ user_id: user.id, name: defaultGroupName })
+            .select()
+            .single();
+          
+          if (createError) throw createError;
+          
+          if (newGroup) {
+            const formattedGroup: PackageGroup = {
+              id: newGroup.id,
+              name: newGroup.name,
+              createdAt: newGroup.created_at
+            };
+            setPackageGroups([formattedGroup]);
+            setCurrentPackageGroup(formattedGroup);
+          }
+        }
+        
+        // Update local state first for immediate UI feedback
+        setUserPackages(prev => [...prev, destinationId]);
+        
+        // If authenticated, store in Supabase
+        if (isAuthenticated && user && currentPackageGroup) {
+          const { error } = await supabase
+            .from('user_packages')
+            .insert({ 
+              user_id: user.id,
+              destination_id: destinationId,
+              package_name: packageName || "My Travel Package",
+              package_group_id: currentPackageGroup.id
+            });
+          
+          if (error) throw error;
+        }
+        
+        toast({
+          title: "Added to package",
+          description: "Destination has been added to your travel package",
+        });
+      } catch (error) {
+        console.error('Error adding to package:', error);
+        toast({
+          description: "Failed to add destination to your package",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        description: "This destination is already in your package",
       });
     }
   };
 
   const removeFromPackage = async (destinationId: string) => {
     try {
-      // Find the package with this destination
-      const res = await axios.get('/api/packages');
-      const packageToRemove = res.data.find((pkg: any) => pkg.destinationId === destinationId);
+      // Update local state first for immediate UI feedback
+      setUserPackages(prev => prev.filter(id => id !== destinationId));
       
-      if (packageToRemove) {
-        await axios.delete(`/api/packages/${packageToRemove._id}`);
-        setUserPackages(prev => prev.filter(id => id !== destinationId));
+      // If authenticated, remove from Supabase
+      if (isAuthenticated && user) {
+        const { error } = await supabase
+          .from('user_packages')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('destination_id', destinationId);
         
-        toast({
-          description: `Removed from your travel package`,
-        });
+        if (error) throw error;
       }
-    } catch (err) {
-      console.error('Error removing from package:', err);
+      
       toast({
-        title: "Error",
-        description: "Failed to remove destination from package",
+        description: "Destination has been removed from your package",
+      });
+    } catch (error) {
+      console.error('Error removing from package:', error);
+      toast({
+        description: "Failed to remove destination from your package",
         variant: "destructive"
       });
     }
   };
 
-  const isInPackage = (destinationId: string): boolean => {
+  const isInPackage = (destinationId: string) => {
     return userPackages.includes(destinationId);
   };
 
-  const createPackageGroup = async (name: string): Promise<void> => {
+  const createVRBooking = async (booking: Omit<VRBooking, 'id' | 'createdAt'>) => {
     try {
-      const res = await axios.post('/api/packages/groups', { name });
-      const newGroup = {
-        id: res.data._id,
-        name: res.data.name,
-        userId: res.data.userId
+      // Check if user already has an active booking
+      if (hasActiveBooking) {
+        toast({
+          title: "Booking limit reached",
+          description: "You already have an active booking. Please cancel it or wait until it's completed to book another VR experience.",
+          variant: "destructive"
+        });
+        throw new Error("User already has an active booking");
+      }
+      
+      const id = Math.random().toString(36).substring(2, 9);
+      const createdAt = new Date().toISOString();
+      
+      const newBooking: VRBooking = {
+        ...booking,
+        id,
+        createdAt,
       };
       
-      setPackageGroups(prev => [...prev, newGroup]);
-      setCurrentPackageGroup(newGroup);
-      
-      toast({
-        description: `Created new package group: ${name}`,
-      });
-    } catch (err) {
-      console.error('Error creating package group:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create package group",
-        variant: "destructive"
-      });
-      throw err;
-    }
-  };
-
-  const requestQuote = async (): Promise<void> => {
-    try {
-      await axios.post('/api/quotes', { packageIds: userPackages });
-      
-      toast({
-        title: "Quote Request Submitted",
-        description: "We'll get back to you with a customized quote soon!",
-      });
-    } catch (err) {
-      console.error('Error requesting quote:', err);
-      toast({
-        title: "Error",
-        description: "Failed to submit quote request",
-        variant: "destructive"
-      });
-      throw err;
-    }
-  };
-
-  const createBooking = async (bookingData: Omit<Booking, 'id' | 'status'>): Promise<void> => {
-    try {
-      const res = await axios.post('/api/bookings', bookingData);
-      
-      const newBooking: Booking = {
-        id: res.data._id,
-        date: res.data.date,
-        time: res.data.time,
-        address: res.data.address,
-        status: res.data.status,
-        additionalNotes: res.data.additionalNotes
-      };
-      
+      // Update local state first for immediate UI feedback
       setBookings(prev => [...prev, newBooking]);
+      setHasActiveBooking(true);
+      
+      // If authenticated, store in Supabase
+      if (isAuthenticated && user) {
+        const { error } = await supabase
+          .from('vr_bookings')
+          .insert({ 
+            id,
+            user_id: booking.userId,
+            date: booking.date,
+            time: booking.time,
+            address: booking.address,
+            status: booking.status,
+            created_at: createdAt,
+            additional_notes: booking.additionalNotes || null
+          });
+        
+        if (error) throw error;
+      }
       
       toast({
-        title: "Booking Confirmed",
-        description: `Your VR experience has been scheduled for ${bookingData.date}`,
+        title: "Booking confirmed",
+        description: "Your VR experience has been booked successfully",
       });
-    } catch (err) {
-      console.error('Error creating booking:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create booking",
-        variant: "destructive"
-      });
-      throw err;
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      
+      // Don't show toast here as we already show one for the booking limit
+      if (!(error instanceof Error && error.message === "User already has an active booking")) {
+        toast({
+          title: "Booking failed",
+          description: "There was an error creating your booking",
+          variant: "destructive"
+        });
+      }
+      throw error;
     }
   };
 
-  // Add missing createVRBooking method
-  const createVRBooking = async (bookingData: any): Promise<void> => {
+  const cancelBooking = async (bookingId: string) => {
     try {
-      const res = await axios.post('/api/bookings', {
-        date: bookingData.date,
-        time: bookingData.time,
-        address: bookingData.address,
-        additionalNotes: bookingData.additionalNotes
-      });
+      // Update local state first for immediate UI feedback
+      setBookings(prev => 
+        prev.map(booking => 
+          booking.id === bookingId 
+            ? { ...booking, status: 'cancelled' } 
+            : booking
+        )
+      );
       
-      const newBooking: Booking = {
-        id: res.data._id,
-        date: res.data.date,
-        time: res.data.time,
-        address: res.data.address,
-        status: res.data.status,
-        additionalNotes: res.data.additionalNotes
-      };
+      // Update hasActiveBooking state
+      const updatedBookings = bookings.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, status: 'cancelled' } 
+          : booking
+      );
       
-      setBookings(prev => [...prev, newBooking]);
+      const stillHasActiveBooking = updatedBookings.some(booking => 
+        booking.id !== bookingId && 
+        booking.status !== 'cancelled' && 
+        booking.status !== 'completed'
+      );
       
-      toast({
-        title: "VR Booking Confirmed",
-        description: `Your VR experience has been scheduled for ${bookingData.date}`,
-      });
-    } catch (err) {
-      console.error('Error creating VR booking:', err);
-      toast({
-        title: "Error",
-        description: "Failed to create VR booking",
-        variant: "destructive"
-      });
-      throw err;
-    }
-  };
-
-  const cancelBooking = async (bookingId: string): Promise<void> => {
-    try {
-      await axios.delete(`/api/bookings/${bookingId}`);
-      setBookings(prev => prev.filter(booking => booking.id !== bookingId));
+      setHasActiveBooking(stillHasActiveBooking);
+      
+      // If authenticated, update in Supabase
+      if (isAuthenticated && user) {
+        const { error } = await supabase
+          .from('vr_bookings')
+          .update({ status: 'cancelled' })
+          .eq('id', bookingId)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      }
       
       toast({
         description: "Your booking has been cancelled",
       });
-    } catch (err) {
-      console.error('Error cancelling booking:', err);
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel booking",
+        description: "Failed to cancel your booking",
         variant: "destructive"
       });
-      throw err;
+      throw error;
+    }
+  };
+
+  const requestQuote = async () => {
+    if (!isAuthenticated || !user || userPackages.length === 0) {
+      toast({
+        description: "You need to add destinations to your package first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const quoteRequest = {
+        id: Math.random().toString(36).substring(2, 9),
+        user_id: user.id,
+        package_ids: userPackages,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('quote_requests')
+        .insert(quoteRequest);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Quote request submitted",
+        description: "We'll contact you soon with a custom quote",
+      });
+    } catch (error) {
+      console.error('Error requesting quote:', error);
+      toast({
+        title: "Request failed",
+        description: "There was an error submitting your quote request",
+        variant: "destructive"
+      });
+      throw error;
     }
   };
 
@@ -324,31 +583,21 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <TravelContext.Provider
       value={{
         userPackages,
+        bookings,
         packageGroups,
         currentPackageGroup,
-        bookings,
-        hasActiveBooking,
-        setCurrentPackageGroup,
         addToPackage,
         removeFromPackage,
-        isInPackage,
-        createPackageGroup,
-        requestQuote,
-        createBooking,
         createVRBooking,
-        cancelBooking
+        cancelBooking,
+        isInPackage,
+        requestQuote,
+        createPackageGroup,
+        setCurrentPackageGroup,
+        hasActiveBooking
       }}
     >
       {children}
     </TravelContext.Provider>
   );
-};
-
-// Hook
-export const useTravel = () => {
-  const context = useContext(TravelContext);
-  if (context === undefined) {
-    throw new Error('useTravel must be used within a TravelProvider');
-  }
-  return context;
 };

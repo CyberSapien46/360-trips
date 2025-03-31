@@ -54,18 +54,10 @@ const LoginForm = () => {
     
     try {
       await login(values.email, values.password);
-      toast({
-        title: "Login successful",
-        description: "You have been logged in successfully",
-      });
       // Successful login will trigger the useEffect above to redirect
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: typeof error === 'string' ? error : "Invalid credentials. Please try again.",
-      });
+      // Error toast is already shown in the login function
     } finally {
       setIsLoading(false);
     }
