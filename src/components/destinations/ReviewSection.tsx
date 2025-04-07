@@ -57,22 +57,39 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ destinationId, destinatio
 
   const fetchReviews = async () => {
     try {
-      const { data, error } = await supabase
+      // First query reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('destination_reviews')
-        .select(`
-          *,
-          profiles:profiles(name)
-        `)
+        .select('*')
         .eq('destination_id', destinationId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
 
-      if (data) {
-        const formattedReviews = data.map(review => ({
+      if (reviewsData) {
+        // Get all user IDs to fetch names
+        const userIds = reviewsData.map(review => review.user_id);
+        
+        // Then fetch user profiles for those IDs
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', userIds);
+          
+        if (profilesError) throw profilesError;
+        
+        // Create a map of user IDs to names
+        const userNamesMap = profilesData?.reduce((acc: Record<string, string>, profile) => {
+          acc[profile.id] = profile.name || 'Anonymous User';
+          return acc;
+        }, {}) || {};
+        
+        // Combine the data
+        const formattedReviews: Review[] = reviewsData.map(review => ({
           ...review,
-          user_name: review.profiles?.name || 'Anonymous User',
+          user_name: userNamesMap[review.user_id] || 'Anonymous User',
         }));
+        
         setReviews(formattedReviews);
       }
     } catch (error) {

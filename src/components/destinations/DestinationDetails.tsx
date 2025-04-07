@@ -90,10 +90,10 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">About this destination</h3>
                 <p>{destination.description}</p>
-                {destination.accommodationDetails && (
+                {destination.accommodation && (
                   <>
                     <h3 className="text-lg font-medium">Accommodation</h3>
-                    <p>{destination.accommodationDetails}</p>
+                    <p>{destination.accommodation}</p>
                   </>
                 )}
               </div>
@@ -103,7 +103,7 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">What's Included</h3>
                 <ul className="space-y-2">
-                  {destination.tourInclusions?.map((inclusion, index) => (
+                  {destination.inclusions?.map((inclusion, index) => (
                     <li key={index} className="flex items-start">
                       <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                       <span>{inclusion}</span>
@@ -111,11 +111,11 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                   ))}
                 </ul>
                 
-                {destination.tourExclusions && (
+                {destination.exclusions && (
                   <>
                     <h3 className="text-lg font-medium mt-6">What's Not Included</h3>
                     <ul className="space-y-2">
-                      {destination.tourExclusions.map((exclusion, index) => (
+                      {destination.exclusions.map((exclusion, index) => (
                         <li key={index} className="flex items-start text-muted-foreground">
                           <X className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
                           <span>{exclusion}</span>

@@ -33,6 +33,35 @@ export type CustomDatabase = Database & {
           created_at?: string;
         };
       };
+      destination_reviews: {
+        Row: {
+          id: string;
+          user_id: string;
+          destination_id: string;
+          rating: number;
+          comment: string;
+          experience_type: 'vr' | 'real_life';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          destination_id: string;
+          rating: number;
+          comment: string;
+          experience_type: 'vr' | 'real_life';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          destination_id?: string;
+          rating?: number;
+          comment?: string;
+          experience_type?: 'vr' | 'real_life';
+          created_at?: string;
+        };
+      };
       user_packages: {
         Row: {
           id: string;
