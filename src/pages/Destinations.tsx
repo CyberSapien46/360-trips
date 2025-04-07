@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import DestinationCard from '@/components/destinations/DestinationCard';
 import VideoModal from '@/components/destinations/VideoModal';
-import { destinations } from '@/data/destinations';
+import DestinationDetails from '@/components/destinations/DestinationDetails';
+import { destinations, DestinationWithTourDetails } from '@/data/destinations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -15,9 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Globe, Search, Filter } from 'lucide-react';
-
-// Exchange rate: 1 USD = approximately 83 INR (as of mid-2024)
-const USD_TO_INR = 83;
+import { useTravel } from '@/context/TravelContext';
 
 const Destinations = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +24,13 @@ const Destinations = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'price-low' | 'price-high' | 'rating' | 'relevant'>('relevant');
+  const [selectedDestination, setSelectedDestination] = useState<DestinationWithTourDetails | null>(null);
+  const { addToPackage, isInPackage } = useTravel();
+  
+  // Filter to only Indian destinations
+  const indianDestinations = destinations.filter(dest => 
+    dest.location.toLowerCase().includes('india')
+  );
   
   const handleOpenVideo = (url: string) => {
     setVideoUrl(url);
@@ -34,15 +40,32 @@ const Destinations = () => {
   const handleCloseVideo = () => {
     setIsVideoModalOpen(false);
   };
+
+  const handleViewDetails = (destination: DestinationWithTourDetails) => {
+    setSelectedDestination(destination);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedDestination(null);
+  };
   
-  // Extract unique countries from location information
-  const countries = Array.from(new Set(destinations.map(dest => {
+  const handleAddToPackage = () => {
+    if (selectedDestination) {
+      addToPackage(selectedDestination.id);
+    }
+  };
+  
+  // Extract unique regions from location information
+  const regions = Array.from(new Set(indianDestinations.map(dest => {
     const parts = dest.location.split(',');
-    return parts[parts.length - 1].trim();
-  }))).sort();
+    if (parts.length > 1) {
+      return parts[parts.length - 2].trim();
+    }
+    return "Other";
+  }))).filter(Boolean).sort();
   
   // Filter destinations based on search query and selected region
-  let filteredDestinations = destinations.filter(dest => {
+  let filteredDestinations = indianDestinations.filter(dest => {
     const matchesSearch = dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -64,17 +87,12 @@ const Destinations = () => {
     });
   }
 
-  // Count destinations by country for display in filter dropdown
-  const countryCount = countries.reduce((acc, country) => {
-    const count = destinations.filter(d => d.location.includes(country)).length;
-    acc[country] = count;
+  // Count destinations by region for display in filter dropdown
+  const regionCount = regions.reduce((acc, region) => {
+    const count = indianDestinations.filter(d => d.location.includes(region)).length;
+    acc[region] = count;
     return acc;
   }, {} as Record<string, number>);
-
-  // Convert USD price to INR for display
-  const convertToINR = (priceUSD: number) => {
-    return Math.round(priceUSD * USD_TO_INR);
-  };
 
   return (
     <MainLayout>
@@ -82,11 +100,11 @@ const Destinations = () => {
         <div className="container">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Explore Dream Destinations
+              Explore Incredible India
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience international and domestic destinations in virtual reality before booking your trip.
-              Travel smart by previewing your dream locations from the comfort of your home.
+              Experience the diversity of Indian destinations in virtual reality before booking your trip.
+              From majestic mountains to serene beaches, ancient temples to vibrant cities.
             </p>
           </div>
           
@@ -113,10 +131,10 @@ const Destinations = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Regions ({destinations.length})</SelectItem>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>
-                        {country} ({countryCount[country]})
+                    <SelectItem value="all">All Regions ({indianDestinations.length})</SelectItem>
+                    {regions.map(region => (
+                      <SelectItem key={region} value={region}>
+                        {region} ({regionCount[region] || 0})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -185,11 +203,9 @@ const Destinations = () => {
                 {filteredDestinations.map((destination) => (
                   <DestinationCard
                     key={destination.id}
-                    destination={{
-                      ...destination,
-                      priceDisplay: `₹${convertToINR(destination.price).toLocaleString('en-IN')}`
-                    }}
+                    destination={destination}
                     onOpenVideo={handleOpenVideo}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
@@ -203,6 +219,15 @@ const Destinations = () => {
         isOpen={isVideoModalOpen}
         onClose={handleCloseVideo}
       />
+
+      {selectedDestination && (
+        <DestinationDetails 
+          destination={selectedDestination}
+          onClose={handleCloseDetails}
+          onAddToPackage={handleAddToPackage}
+          inPackage={isInPackage(selectedDestination.id)}
+        />
+      )}
     </MainLayout>
   );
 };

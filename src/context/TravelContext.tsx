@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export type Destination = {
+export interface Destination {
   id: string;
   name: string;
   location: string;
@@ -13,7 +12,7 @@ export type Destination = {
   videoUrl: string;
   price: number;
   rating: number;
-};
+}
 
 export type VRBooking = {
   id: string;
@@ -76,7 +75,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentPackageGroup, setCurrentPackageGroup] = useState<PackageGroup | null>(null);
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
 
-  // Check if user has active bookings
   useEffect(() => {
     if (bookings.length > 0) {
       const activeBooking = bookings.some(booking => 
@@ -88,12 +86,10 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [bookings]);
 
-  // Load packages, package groups, and bookings from Supabase when auth state changes
   useEffect(() => {
     const loadUserData = async () => {
       if (isAuthenticated && user) {
         try {
-          // Load package groups
           const { data: groupsData, error: groupsError } = await supabase
             .from('package_groups')
             .select('*')
@@ -109,12 +105,10 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             }));
             setPackageGroups(formattedGroups);
             
-            // Set first group as current if none is selected
             if (!currentPackageGroup) {
               setCurrentPackageGroup(formattedGroups[0]);
             }
           } else {
-            // Create a default package group if none exists
             if (isAuthenticated && user) {
               const defaultGroupName = "My Travel Packages";
               const { data: newGroup, error: createError } = await supabase
@@ -137,7 +131,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           }
           
-          // Try to load packages from Supabase
           const { data: packageData, error: packageError } = await supabase
             .from('user_packages')
             .select('destination_id')
@@ -149,12 +142,10 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             const packages = packageData.map(item => item.destination_id);
             setUserPackages(packages);
           } else {
-            // If no data in Supabase, check localStorage as fallback
             const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
             if (storedPackages) {
               setUserPackages(JSON.parse(storedPackages));
               
-              // Migrate localStorage data to Supabase
               const packagesToInsert = JSON.parse(storedPackages).map((destId: string) => ({
                 user_id: user.id,
                 destination_id: destId,
@@ -167,7 +158,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           }
           
-          // Load bookings
           const { data: bookingData, error: bookingError } = await supabase
             .from('vr_bookings')
             .select('*')
@@ -176,7 +166,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
           if (bookingError) throw bookingError;
           
           if (bookingData) {
-            // Convert from snake_case to camelCase
             const formattedBookings: VRBooking[] = bookingData.map(booking => ({
               id: booking.id,
               userId: booking.user_id,
@@ -189,39 +178,33 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             }));
             setBookings(formattedBookings);
             
-            // Check if user has any active bookings
             const activeBooking = formattedBookings.some(booking => 
               booking.status !== 'cancelled' && booking.status !== 'completed'
             );
             setHasActiveBooking(activeBooking);
           } else {
-            // If no data in Supabase, check localStorage as fallback
             const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
             if (storedBookings) {
               const parsedBookings = JSON.parse(storedBookings);
               setBookings(parsedBookings);
               
-              // Check if user has any active bookings
               const activeBooking = parsedBookings.some((booking: VRBooking) => 
                 booking.status !== 'cancelled' && booking.status !== 'completed'
               );
               setHasActiveBooking(activeBooking);
               
-              // Migrate localStorage bookings to Supabase
-              if (parsedBookings.length > 0) {
-                const bookingsToInsert = parsedBookings.map((booking: VRBooking) => ({
-                  id: booking.id,
-                  user_id: booking.userId,
-                  date: booking.date,
-                  time: booking.time,
-                  address: booking.address,
-                  status: booking.status,
-                  created_at: booking.createdAt,
-                  additional_notes: booking.additionalNotes || null
-                }));
-                
-                await supabase.from('vr_bookings').insert(bookingsToInsert);
-              }
+              const bookingsToInsert = parsedBookings.map((booking: VRBooking) => ({
+                id: booking.id,
+                user_id: booking.userId,
+                date: booking.date,
+                time: booking.time,
+                address: booking.address,
+                status: booking.status,
+                created_at: booking.createdAt,
+                additional_notes: booking.additionalNotes || null
+              }));
+              
+              await supabase.from('vr_bookings').insert(bookingsToInsert);
             }
           }
         } catch (error) {
@@ -231,7 +214,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             variant: "destructive"
           });
           
-          // Fallback to localStorage if Supabase fails
           const storedPackages = localStorage.getItem(`vr-travel-packages-${user.id}`);
           const storedBookings = localStorage.getItem(`vr-travel-bookings-${user.id}`);
           
@@ -243,7 +225,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
             const parsedBookings = JSON.parse(storedBookings);
             setBookings(parsedBookings);
             
-            // Check if user has any active bookings
             const activeBooking = parsedBookings.some((booking: VRBooking) => 
               booking.status !== 'cancelled' && booking.status !== 'completed'
             );
@@ -251,7 +232,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
       } else {
-        // Not authenticated, use anonymous storage
         const storedPackages = localStorage.getItem('vr-travel-packages');
         const storedBookings = localStorage.getItem('vr-travel-bookings');
         
@@ -263,7 +243,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
           const parsedBookings = JSON.parse(storedBookings);
           setBookings(parsedBookings);
           
-          // Check if user has any active bookings
           const activeBooking = parsedBookings.some((booking: VRBooking) => 
             booking.status !== 'cancelled' && booking.status !== 'completed'
           );
@@ -275,7 +254,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     loadUserData();
   }, [isAuthenticated, user, currentPackageGroup]);
 
-  // Save to localStorage as fallback when state changes
   useEffect(() => {
     if (isAuthenticated && user) {
       localStorage.setItem(`vr-travel-packages-${user.id}`, JSON.stringify(userPackages));
@@ -284,7 +262,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [userPackages, isAuthenticated, user]);
 
-  // Save bookings to localStorage as fallback
   useEffect(() => {
     if (isAuthenticated && user) {
       localStorage.setItem(`vr-travel-bookings-${user.id}`, JSON.stringify(bookings));
@@ -338,9 +315,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
   const addToPackage = async (destinationId: string, packageName?: string) => {
     if (!userPackages.includes(destinationId)) {
       try {
-        // Check if we have a current package group
         if (!currentPackageGroup && isAuthenticated && user) {
-          // Create a default package group if none exists
           const defaultGroupName = "My Travel Packages";
           const { data: newGroup, error: createError } = await supabase
             .from('package_groups')
@@ -361,10 +336,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
         
-        // Update local state first for immediate UI feedback
         setUserPackages(prev => [...prev, destinationId]);
         
-        // If authenticated, store in Supabase
         if (isAuthenticated && user && currentPackageGroup) {
           const { error } = await supabase
             .from('user_packages')
@@ -398,10 +371,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeFromPackage = async (destinationId: string) => {
     try {
-      // Update local state first for immediate UI feedback
       setUserPackages(prev => prev.filter(id => id !== destinationId));
       
-      // If authenticated, remove from Supabase
       if (isAuthenticated && user) {
         const { error } = await supabase
           .from('user_packages')
@@ -430,7 +401,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const createVRBooking = async (booking: Omit<VRBooking, 'id' | 'createdAt'>) => {
     try {
-      // Check if user already has an active booking
       if (hasActiveBooking) {
         toast({
           title: "Booking limit reached",
@@ -449,11 +419,9 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         createdAt,
       };
       
-      // Update local state first for immediate UI feedback
       setBookings(prev => [...prev, newBooking]);
       setHasActiveBooking(true);
       
-      // If authenticated, store in Supabase
       if (isAuthenticated && user) {
         const { error } = await supabase
           .from('vr_bookings')
@@ -478,7 +446,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error('Error creating booking:', error);
       
-      // Don't show toast here as we already show one for the booking limit
       if (!(error instanceof Error && error.message === "User already has an active booking")) {
         toast({
           title: "Booking failed",
@@ -492,7 +459,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const cancelBooking = async (bookingId: string) => {
     try {
-      // Update local state first for immediate UI feedback
       setBookings(prev => 
         prev.map(booking => 
           booking.id === bookingId 
@@ -501,7 +467,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
         )
       );
       
-      // Update hasActiveBooking state
       const updatedBookings = bookings.map(booking => 
         booking.id === bookingId 
           ? { ...booking, status: 'cancelled' } 
@@ -516,7 +481,6 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({
       
       setHasActiveBooking(stillHasActiveBooking);
       
-      // If authenticated, update in Supabase
       if (isAuthenticated && user) {
         const { error } = await supabase
           .from('vr_bookings')

@@ -1,20 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { Heart, Plus, Check } from 'lucide-react';
+import { Heart, Plus, Check, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useTravel, Destination } from '@/context/TravelContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { DestinationWithTourDetails } from '@/data/destinations';
 
 interface DestinationCardProps {
-  destination: Destination & { priceDisplay?: string };
+  destination: DestinationWithTourDetails & { priceDisplay?: string };
   onOpenVideo: (url: string) => void;
+  onViewDetails: (destination: DestinationWithTourDetails) => void;
 }
 
 const DestinationCard: React.FC<DestinationCardProps> = ({ 
   destination,
-  onOpenVideo 
+  onOpenVideo,
+  onViewDetails
 }) => {
   const { isAuthenticated, user } = useAuth();
   const { addToPackage, isInPackage } = useTravel();
@@ -119,6 +122,9 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
             <Heart className={liked ? 'fill-current' : ''} size={18} />
           </Button>
         </div>
+        <div className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-white text-xs rounded-full">
+          {destination.duration}
+        </div>
       </div>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
@@ -159,10 +165,18 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
           {destination.description}
         </p>
         <div className="font-medium text-primary">
-          {destination.priceDisplay || `₹${Math.round(destination.price * 83).toLocaleString('en-IN')}`} per person
+          {destination.priceDisplay || `₹${destination.price.toLocaleString('en-IN')}`} per person
         </div>
       </CardContent>
-      <CardFooter className="px-4 pb-4 pt-0">
+      <CardFooter className="px-4 pb-4 pt-0 flex flex-col space-y-2">
+        <Button 
+          onClick={() => onViewDetails(destination)}
+          variant="secondary"
+          className="w-full"
+        >
+          <Eye size={16} className="mr-2" />
+          View Details
+        </Button>
         <Button 
           onClick={handleAddToPackage}
           disabled={inPackage}
