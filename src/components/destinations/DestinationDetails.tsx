@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { X, MapPin, Calendar, Clock, IndianRupee, Check, Plus, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, MapPin, Calendar, Clock, IndianRupee, Check, Plus, Star, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DestinationWithTourDetails } from '@/data/destinations';
 import ReviewSection from './ReviewSection';
+import PanoramaViewer from './PanoramaViewer';
 
 interface DestinationDetailsProps {
   destination: DestinationWithTourDetails;
@@ -28,6 +29,8 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
   onAddToPackage,
   inPackage,
 }) => {
+  const [view, setView] = useState<'regular' | '360'>('regular');
+  
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
@@ -52,10 +55,11 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
         </DialogHeader>
         
         <Tabs defaultValue="overview" className="px-6 mt-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="inclusions">Inclusions</TabsTrigger>
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
+            <TabsTrigger value="360view">360° View</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
           </TabsList>
           
@@ -125,6 +129,49 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                       <p className="mt-2 text-muted-foreground">{day.description}</p>
                     </div>
                   ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="360view" className="pt-2">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">360° Panoramic Experience</h3>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <span className="mr-2">Drag to explore</span>
+                    <Compass className="h-4 w-4" />
+                  </div>
+                </div>
+                
+                <div className="bg-muted/20 rounded-lg p-4 text-muted-foreground mb-4">
+                  <p className="text-sm">
+                    Use your mouse or touch to look around in 360°. Scroll to zoom in and out.
+                    Experience {destination.name} as if you were actually there!
+                  </p>
+                </div>
+                
+                <PanoramaViewer 
+                  imageUrl={destination.panoramaUrl || destination.imageUrl} 
+                  className="h-[400px] mb-6 shadow-lg"
+                />
+                
+                <div className="mt-6">
+                  <h4 className="font-medium mb-2">Key Viewpoints</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 2, 3, 4].map((point) => (
+                      <div 
+                        key={point}
+                        className="aspect-square bg-muted rounded-md overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all"
+                        onClick={() => console.log(`Viewpoint ${point} clicked`)}
+                      >
+                        <img 
+                          src={destination.imageUrl} 
+                          alt={`Viewpoint ${point}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </TabsContent>
