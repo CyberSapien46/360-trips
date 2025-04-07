@@ -110,8 +110,6 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                     </li>
                   ))}
                 </ul>
-                
-                {/* We don't have exclusions in our model, so we'll remove this section */}
               </div>
             </TabsContent>
             
