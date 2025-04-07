@@ -111,19 +111,7 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                   ))}
                 </ul>
                 
-                {destination.exclusions && (
-                  <>
-                    <h3 className="text-lg font-medium mt-6">What's Not Included</h3>
-                    <ul className="space-y-2">
-                      {destination.exclusions.map((exclusion, index) => (
-                        <li key={index} className="flex items-start text-muted-foreground">
-                          <X className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>{exclusion}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
+                {/* We don't have exclusions in our model, so we'll remove this section */}
               </div>
             </TabsContent>
             
