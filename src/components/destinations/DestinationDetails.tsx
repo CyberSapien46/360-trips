@@ -1,20 +1,19 @@
 
 import React from 'react';
+import { X, MapPin, Calendar, Clock, IndianRupee, Check, Plus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  CalendarDays, 
-  Clock, 
-  Hotel, 
-  CheckCircle, 
-  Map, 
-  Star, 
-  X,
-  MapPin,
-  IndianRupee
-} from 'lucide-react';
-import { useTravel } from '@/context/TravelContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { DestinationWithTourDetails } from '@/data/destinations';
+import ReviewSection from './ReviewSection';
 
 interface DestinationDetailsProps {
   destination: DestinationWithTourDetails;
@@ -27,156 +26,154 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
   destination,
   onClose,
   onAddToPackage,
-  inPackage
+  inPackage,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-xl overflow-hidden shadow-xl">
-        <div className="relative">
-          <div 
-            className="h-64 w-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${destination.imageUrl})` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl">{destination.name}</DialogTitle>
+              <DialogDescription className="flex items-center mt-1">
+                <MapPin className="h-4 w-4 mr-1" />
+                {destination.location}
+              </DialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full mt-[-0.5rem] mr-[-0.5rem]"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-            onClick={onClose}
-          >
-            <X size={24} />
-          </Button>
-          <div className="absolute bottom-4 left-6 text-white">
-            <h1 className="text-3xl font-bold mb-1">{destination.name}</h1>
-            <div className="flex items-center space-x-2">
-              <MapPin size={16} />
-              <span>{destination.location}</span>
-              <div className="flex items-center ml-2 bg-amber-400/90 text-amber-900 px-2 py-0.5 rounded-full">
-                <Star size={14} className="mr-1" />
-                <span className="font-medium">{destination.rating.toFixed(1)}</span>
+        </DialogHeader>
+        
+        <Tabs defaultValue="overview" className="px-6 mt-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="inclusions">Inclusions</TabsTrigger>
+            <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          </TabsList>
+          
+          <ScrollArea className="h-[calc(90vh-12rem)] mt-4 pb-6">
+            <TabsContent value="overview" className="pt-2">
+              <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden mb-6">
+                <img
+                  src={destination.imageUrl}
+                  alt={destination.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-16rem)]">
-          <div className="flex flex-wrap gap-4 mb-6">
-            <Card className="flex-1 min-w-[200px]">
-              <CardContent className="p-4 flex items-center space-x-3">
-                <Clock className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="font-medium">{destination.duration}</p>
+              
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-muted/50 p-4 rounded-lg text-center">
+                  <Calendar className="mx-auto h-5 w-5 mb-2 text-primary" />
+                  <p className="text-sm font-medium">{destination.duration}</p>
+                  <p className="text-xs text-muted-foreground">Duration</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="flex-1 min-w-[200px]">
-              <CardContent className="p-4 flex items-center space-x-3">
-                <Hotel className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Accommodation</p>
-                  <p className="font-medium line-clamp-1">{destination.accommodation}</p>
+                <div className="bg-muted/50 p-4 rounded-lg text-center">
+                  <IndianRupee className="mx-auto h-5 w-5 mb-2 text-primary" />
+                  <p className="text-sm font-medium">₹{destination.price.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-muted-foreground">Per Person</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="flex-1 min-w-[200px]">
-              <CardContent className="p-4 flex items-center space-x-3">
-                <IndianRupee className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="font-medium">₹{destination.price.toLocaleString('en-IN')}</p>
+                <div className="bg-muted/50 p-4 rounded-lg text-center">
+                  <Star className="mx-auto h-5 w-5 mb-2 text-amber-500" />
+                  <p className="text-sm font-medium">{destination.rating.toFixed(1)}/5</p>
+                  <p className="text-xs text-muted-foreground">Rating</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="mb-6">
-            <h2 className="text-lg font-medium mb-2">Tour Description</h2>
-            <p className="text-muted-foreground">{destination.description}</p>
-          </div>
-          
-          <div className="mb-6">
-            <h2 className="text-lg font-medium mb-3">Tour Highlights</h2>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {destination.tourHighlights.map((highlight, index) => (
-                <li key={index} className="flex items-start space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>{highlight}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div className="mb-6">
-            <h2 className="text-lg font-medium mb-3">Inclusions</h2>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {destination.inclusions.map((inclusion, index) => (
-                <li key={index} className="flex items-start space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>{inclusion}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h2 className="text-lg font-medium mb-3">Itinerary</h2>
-            <div className="space-y-4">
-              {destination.itinerary.map((day, index) => (
-                <Card key={index} className="relative overflow-hidden border-l-4 border-primary">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-2">
-                      <CalendarDays className="h-5 w-5 text-primary mr-2" />
-                      <h3 className="font-medium">Day {day.day}: {day.title}</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">About this destination</h3>
+                <p>{destination.description}</p>
+                {destination.accommodationDetails && (
+                  <>
+                    <h3 className="text-lg font-medium">Accommodation</h3>
+                    <p>{destination.accommodationDetails}</p>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="inclusions" className="pt-2">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">What's Included</h3>
+                <ul className="space-y-2">
+                  {destination.tourInclusions?.map((inclusion, index) => (
+                    <li key={index} className="flex items-start">
+                      <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>{inclusion}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                {destination.tourExclusions && (
+                  <>
+                    <h3 className="text-lg font-medium mt-6">What's Not Included</h3>
+                    <ul className="space-y-2">
+                      {destination.tourExclusions.map((exclusion, index) => (
+                        <li key={index} className="flex items-start text-muted-foreground">
+                          <X className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{exclusion}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="itinerary" className="pt-2">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Detailed Itinerary</h3>
+                <div className="space-y-6">
+                  {destination.itinerary?.map((day) => (
+                    <div key={day.day} className="relative pl-8 pb-6">
+                      <div className="absolute left-0 top-0 h-full w-px bg-border"></div>
+                      <div className="absolute left-[-8px] top-1 h-4 w-4 rounded-full bg-primary"></div>
+                      <h4 className="font-medium">Day {day.day}: {day.title}</h4>
+                      <p className="mt-2 text-muted-foreground">{day.description}</p>
                     </div>
-                    <p className="text-muted-foreground">{day.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reviews" className="pt-2">
+              <ReviewSection 
+                destinationId={destination.id} 
+                destinationName={destination.name} 
+              />
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
         
-        <div className="p-4 border-t flex justify-between items-center bg-muted/30">
-          <div>
-            <p className="text-sm text-muted-foreground">Tour package price</p>
-            <p className="text-xl font-semibold text-primary">₹{destination.price.toLocaleString('en-IN')} <span className="text-sm font-normal text-muted-foreground">per person</span></p>
-          </div>
-          <Button 
+        <div className="p-6 border-t bg-card mt-auto">
+          <Button
+            className="w-full"
             onClick={onAddToPackage}
             disabled={inPackage}
-            size="lg"
-            className="gap-2"
+            variant={inPackage ? "outline" : "default"}
           >
             {inPackage ? (
               <>
-                <CheckCircle size={18} />
+                <Check size={16} className="mr-2" />
                 Added to Package
               </>
             ) : (
               <>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
+                <Plus size={16} className="mr-2" />
                 Add to Package
               </>
             )}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
