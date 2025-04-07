@@ -1,3 +1,4 @@
+
 import { Destination } from '@/context/TravelContext';
 
 // Extended destination type with tour details
@@ -637,4 +638,13 @@ export const destinations: DestinationWithTourDetails[] = [
       {
         day: 2,
         title: "Temple Exploration & Cultural Experience",
-        description: "Morning visit to the Eastern Group (Jain Temples) and Southern Group of temples to complete your temple circuit. Afternoon excursion to nearby Raneh Falls, a natural canyon made of crystalline granite in various colors. Evening enjoy a
+        description: "Morning visit to the Eastern Group (Jain Temples) and Southern Group of temples to complete your temple circuit. Afternoon excursion to nearby Raneh Falls, a natural canyon made of crystalline granite in various colors. Evening enjoy a traditional Bundeli folk dance performance."
+      },
+      {
+        day: 3,
+        title: "Wildlife Safari & Departure",
+        description: "Optional early morning safari at Panna National Park to spot tigers and other wildlife. After breakfast, time for last-minute temple visits or souvenir shopping before transfer to Khajuraho airport for departure."
+      }
+    ]
+  }
+];
