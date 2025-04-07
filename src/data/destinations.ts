@@ -1,4 +1,3 @@
-
 import { Destination } from '@/context/TravelContext';
 
 // Extended destination type with tour details
@@ -446,5 +445,196 @@ export const destinations: DestinationWithTourDetails[] = [
         description: "Morning visit to Bhujodi weaver's village. Time for souvenir shopping in Bhuj. Transfer to Bhuj airport for departure."
       }
     ]
-  }
-];
+  },
+  {
+    id: "31",
+    name: "Hampi, Ancient Ruins",
+    location: "Karnataka, India",
+    description: "Step back in time at the UNESCO World Heritage Site of Hampi, with its ancient temples, royal structures, and boulder-strewn landscapes that tell the story of the glorious Vijayanagara Empire.",
+    imageUrl: "https://images.unsplash.com/photo-1582731595896-d2c304a6a08d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/embed/tfHYxhp-yfU?si=y_GzhwPkUuH9SsSR",
+    price: 19999,
+    rating: 4.7,
+    duration: "4 Days / 3 Nights",
+    accommodation: "Heritage Hotel (Evolve Back or similar)",
+    tourHighlights: [
+      "Virupaksha Temple and ancient bazaars",
+      "Stone chariot at Vittala Temple",
+      "Sunrise at Matanga Hill",
+      "Coracle ride on the Tungabhadra river",
+      "Nearby Anegundi village exploration"
+    ],
+    inclusions: [
+      "Accommodation with breakfast",
+      "Transportation in AC vehicle",
+      "Expert local guide",
+      "Monument entrance fees",
+      "Coracle boat ride",
+      "Sunrise and sunset experiences"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Arrival in Hospet & First Glimpse of Hampi",
+        description: "Arrive at Hospet/Ballari and transfer to your hotel near Hampi. Evening walk to the Tungabhadra riverside for sunset views over the ancient ruins."
+      },
+      {
+        day: 2,
+        title: "Sacred Center & Royal Center",
+        description: "Full day guided tour of Hampi's Sacred Center, including the iconic Virupaksha Temple, Hemakuta Hill temples, and Krishna Temple complex. Afternoon exploration of the Royal Center with the Lotus Mahal, Elephant Stables, and Queen's Bath."
+      },
+      {
+        day: 3,
+        title: "Vittala Temple & River Experience",
+        description: "Morning visit to the remarkable Vittala Temple with its famous stone chariot and musical pillars. Enjoy a traditional coracle boat ride on the Tungabhadra River. Climb Matanga Hill for panoramic sunset views of the ancient city."
+      },
+      {
+        day: 4,
+        title: "Anegundi Village & Departure",
+        description: "Visit the ancient village of Anegundi across the river, believed to be older than Hampi itself. Explore Anjaneya Hill, the birthplace of Lord Hanuman. Later, transfer to Hospet/Ballari for your departure."
+      }
+    ]
+  },
+  {
+    id: "32",
+    name: "Andaman Islands",
+    location: "Andaman & Nicobar Islands, India",
+    description: "Experience the pristine beaches, crystal-clear waters, and vibrant coral reefs of the Andaman Islands, a tropical paradise with rich marine life, lush rainforests, and a fascinating colonial history.",
+    imageUrl: "https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/embed/ORG3Eo0e9P0?si=sEpVPO67RdK8ozmn",
+    price: 38999,
+    rating: 4.9,
+    duration: "6 Days / 5 Nights",
+    accommodation: "Beach Resorts & Island Hotels",
+    tourHighlights: [
+      "Radhanagar Beach (Asia's Best Beach)",
+      "Snorkeling at Elephant Beach",
+      "Light and Sound show at Cellular Jail",
+      "Glass-bottom boat ride at North Bay",
+      "Limestone caves at Baratang"
+    ],
+    inclusions: [
+      "Accommodation with breakfast",
+      "All transfers and ferry tickets",
+      "Snorkeling equipment",
+      "Entry tickets to attractions",
+      "Island hopping tours",
+      "Expert guides for marine activities"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Arrival in Port Blair",
+        description: "Arrive at Port Blair airport and transfer to your hotel. Afternoon visit to the historic Cellular Jail and attend the moving Light and Sound show in the evening, which narrates the saga of the Indian freedom struggle."
+      },
+      {
+        day: 2,
+        title: "North Bay & Ross Island",
+        description: "Full day excursion to North Bay Island (Coral Island) for snorkeling, glass-bottom boat ride, and underwater marine life viewing. Later visit Ross Island, the former administrative headquarters of the British, with its colonial ruins being reclaimed by nature."
+      },
+      {
+        day: 3,
+        title: "Port Blair to Havelock Island",
+        description: "Morning ferry to Havelock Island. Check-in at your beach resort. Visit the famous Radhanagar Beach, rated as Asia's Best Beach, for swimming and to witness a spectacular sunset."
+      },
+      {
+        day: 4,
+        title: "Elephant Beach & Marine Activities",
+        description: "Excursion to Elephant Beach for snorkeling and sea walking to experience the vibrant coral reefs and colorful marine life. Afternoon at leisure to enjoy the pristine beaches of Havelock."
+      },
+      {
+        day: 5,
+        title: "Havelock to Port Blair & Chidiya Tapu",
+        description: "Morning ferry back to Port Blair. Afternoon visit to Chidiya Tapu (Bird Island) for birdwatching and to witness one of the most beautiful sunsets in the Andamans."
+      },
+      {
+        day: 6,
+        title: "Departure from Port Blair",
+        description: "Time for last-minute shopping for souvenirs like pearl jewelry, seashell crafts, and wooden carvings. Transfer to Port Blair airport for your departure flight."
+      }
+    ]
+  },
+  {
+    id: "33",
+    name: "Ajanta & Ellora Caves",
+    location: "Maharashtra, India",
+    description: "Discover the UNESCO World Heritage Sites of Ajanta and Ellora, showcasing extraordinary rock-cut architecture, intricate sculptures, and magnificent paintings that span Buddhism, Hinduism, and Jainism.",
+    imageUrl: "https://images.unsplash.com/photo-1589308454676-a2a3c1202679?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/embed/35EZ0OZ3BjE?si=zONEgmUUDtEeDlRN",
+    price: 23999,
+    rating: 4.8,
+    duration: "4 Days / 3 Nights",
+    accommodation: "4-Star Hotel in Aurangabad",
+    tourHighlights: [
+      "Buddhist paintings at Ajanta Caves",
+      "Kailasa Temple at Ellora (world's largest monolithic structure)",
+      "Multi-religious cave complexes",
+      "Daulatabad Fort exploration",
+      "Bibi-ka-Maqbara (Mini Taj Mahal)"
+    ],
+    inclusions: [
+      "Accommodation with breakfast",
+      "Private AC vehicle for transfers and sightseeing",
+      "Professional guide specialized in cave art and architecture",
+      "Monument entrance fees",
+      "Bottled water during sightseeing"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Arrival in Aurangabad",
+        description: "Arrive at Aurangabad airport and transfer to your hotel. Afternoon visit to Bibi-ka-Maqbara, the 'Poor Man's Taj Mahal' built by Aurangzeb's son as a replica of the Taj Mahal. Later explore the local markets for Himroo and Paithani silk weaving crafts."
+      },
+      {
+        day: 2,
+        title: "Ellora Caves Exploration",
+        description: "Full day excursion to the magnificent Ellora Caves, showcasing 34 rock-cut temples and monasteries from Buddhist, Hindu, and Jain religions. Marvel at the incredible Kailasa Temple (Cave 16), carved from a single rock, making it the world's largest monolithic structure."
+      },
+      {
+        day: 3,
+        title: "Ajanta Caves Discovery",
+        description: "Day trip to the Ajanta Caves (approximately 2.5 hours from Aurangabad), a set of 30 Buddhist cave monuments dating from the 2nd century BCE to about 480 CE. These caves are renowned for their stunning tempera paintings and sculptures, representing the finest surviving examples of ancient Indian art."
+      },
+      {
+        day: 4,
+        title: "Daulatabad Fort & Departure",
+        description: "Morning visit to the formidable Daulatabad Fort, an ancient fortification with sophisticated defensive systems. Later, transfer to Aurangabad airport for your departure flight."
+      }
+    ]
+  },
+  {
+    id: "34",
+    name: "Khajuraho Temples",
+    location: "Madhya Pradesh, India",
+    description: "Explore the exquisite UNESCO-listed Khajuraho temples, famous for their stunning Nagara-style architecture and intricate carvings that depict various aspects of life, including the celebrated erotic sculptures.",
+    imageUrl: "https://images.unsplash.com/photo-1604871000636-074fa5117945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/embed/CMKrBo5kaFY?si=hSZYBSn1PLrXzHIQ",
+    price: 22999,
+    rating: 4.7,
+    duration: "3 Days / 2 Nights",
+    accommodation: "Heritage Hotel (Lalit Temple View or similar)",
+    tourHighlights: [
+      "Western Group of Temples with Kandariya Mahadeva",
+      "Light and Sound Show narrating temple history",
+      "Eastern and Southern Temple Groups",
+      "Panna National Park safari",
+      "Traditional Bundeli folk dance performance"
+    ],
+    inclusions: [
+      "Accommodation with breakfast",
+      "Private transfers and sightseeing",
+      "Expert guide for temple architecture",
+      "Light and Sound Show tickets",
+      "Cultural performance",
+      "Monument entrance fees"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Arrival in Khajuraho",
+        description: "Arrive at Khajuraho airport and transfer to your hotel. Afternoon guided tour of the magnificent Western Group of Temples, including the Kandariya Mahadeva Temple, Chitragupta Temple, and Vishwanath Temple. Evening enjoy the spectacular Sound and Light Show that brings the history of these temples to life."
+      },
+      {
+        day: 2,
+        title: "Temple Exploration & Cultural Experience",
+        description: "Morning visit to the Eastern Group (Jain Temples) and Southern Group of temples to complete your temple circuit. Afternoon excursion to nearby Raneh Falls, a natural canyon made of crystalline granite in various colors. Evening enjoy a
