@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,11 +26,11 @@ const Home = () => {
         <div className="container relative z-10 text-white">
           <div className="max-w-3xl">
             <h1 className="text-5xl md:text-6xl font-bold mb-4 animate-slide-in">
-              Experience the World in Virtual Reality
+              360° Trips: Virtual Travel Experiences
             </h1>
             <p className="text-xl opacity-90 mb-8 animate-slide-in" style={{ animationDelay: '100ms' }}>
               Explore destinations in immersive VR before planning your next adventure. 
-              See it, feel it, then book it.
+              See it, feel it, then book it with 360° Trips.
             </p>
             <div className="space-x-4 animate-slide-in" style={{ animationDelay: '200ms' }}>
               <Button asChild size="lg" className="rounded-full px-8">

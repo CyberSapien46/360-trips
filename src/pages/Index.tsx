@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -10,11 +9,11 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">
-            Experience India Before You Travel
+            Experience India with 360° Trips
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
             Explore beautiful Indian destinations in immersive virtual reality before booking your holiday. 
-            Make informed decisions and plan the perfect tour across incredible India.
+            Make informed decisions and plan the perfect tour across incredible India with 360° Trips.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8">

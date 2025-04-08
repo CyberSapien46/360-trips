@@ -71,7 +71,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="container flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <span className="text-2xl font-bold text-primary">
-              360 Trips
+              360° Trips
             </span>
           </Link>
           
@@ -202,7 +202,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-medium mb-4">360 Trips</h3>
+              <h3 className="text-lg font-medium mb-4">360° Trips</h3>
               <p className="text-muted-foreground">
                 Experience travel destinations in virtual reality before you go.
               </p>
@@ -265,7 +265,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-muted-foreground/20 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} 360 Trips. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} 360° Trips. All rights reserved.</p>
           </div>
         </div>
       </footer>
