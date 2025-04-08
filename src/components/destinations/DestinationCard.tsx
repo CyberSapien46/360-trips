@@ -23,8 +23,18 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   const { addToPackage, isInPackage } = useTravel();
   const { toast } = useToast();
   const [liked, setLiked] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   const inPackage = isInPackage(destination.id);
+  
+  // Preload the image
+  useEffect(() => {
+    const img = new Image();
+    img.src = destination.imageUrl;
+    img.onload = () => setImageLoaded(true);
+    img.onerror = () => setImageError(true);
+  }, [destination.imageUrl]);
   
   // Check if destination is in favorites when component mounts
   useEffect(() => {
@@ -88,9 +98,19 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     <Card className="overflow-hidden h-full hover-scale glass-card transition-all">
       <div 
         className="h-48 bg-cover bg-center cursor-pointer relative group"
-        style={{ backgroundImage: `url(${destination.imageUrl})` }}
+        style={{ 
+          backgroundImage: imageLoaded && !imageError ? `url(${destination.imageUrl})` : 'none',
+          backgroundColor: 'rgb(243, 244, 246)' // Light gray background as fallback
+        }}
         onClick={() => onOpenVideo(destination.videoUrl)}
       >
+        {(!imageLoaded || imageError) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="animate-pulse text-sm text-muted-foreground">
+              {imageError ? 'Image unavailable' : 'Loading image...'}
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <div className="bg-white/90 rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform">
             <svg 
