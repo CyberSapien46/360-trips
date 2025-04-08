@@ -394,7 +394,7 @@ export const destinations: DestinationWithTourDetails[] = [
     inclusions: ['Accommodation', 'Coffee plantation tour', 'Wildlife safari', 'Local cuisine'],
     itinerary: [
       { day: 1, title: 'Coffee Estate Tour', description: 'Explore coffee plantations and learn about coffee production.' },
-      { day: 2, title: 'Abbey Falls & Raja's Seat', description: 'Visit the scenic Abbey Falls and enjoy sunset at Raja's Seat.' },
+      { day: 2, title: 'Abbey Falls and Raja\'s Seat', description: 'Visit the scenic Abbey Falls and enjoy sunset at Raja\'s Seat.' },
       { day: 3, title: 'Dubare Elephant Camp', description: 'Interact with elephants at Dubare Elephant Camp.' }
     ]
   },
