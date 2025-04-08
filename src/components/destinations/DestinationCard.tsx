@@ -8,6 +8,16 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { DestinationWithTourDetails } from '@/data/destinations';
 
+// Fallback images for when unsplash images fail to load
+const fallbackImages = [
+  "/placeholder.svg",
+  "https://images.unsplash.com/photo-1472396961693-142e6e269027?q=80&w=1200",
+  "https://images.unsplash.com/photo-1433086966358-54859d0ed716?q=80&w=1200",
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200",
+  "https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1200",
+  "https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?q=80&w=1200"
+];
+
 interface DestinationCardProps {
   destination: DestinationWithTourDetails & { priceDisplay?: string };
   onOpenVideo: (url: string) => void;
@@ -25,16 +35,34 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
   const [liked, setLiked] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [fallbackImage, setFallbackImage] = useState("");
   
   const inPackage = isInPackage(destination.id);
   
-  // Preload the image
+  // Preload the image and set fallback if needed
   useEffect(() => {
     const img = new Image();
     img.src = destination.imageUrl;
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => setImageError(true);
-  }, [destination.imageUrl]);
+    
+    img.onload = () => {
+      setImageLoaded(true);
+      setImageError(false);
+    };
+    
+    img.onerror = () => {
+      // When image fails to load, use a fallback image
+      setImageError(true);
+      // Assign a fallback image based on destination id to maintain consistency
+      const fallbackIndex = parseInt(destination.id.replace('d', '')) % fallbackImages.length;
+      setFallbackImage(fallbackImages[fallbackIndex] || fallbackImages[0]);
+    };
+
+    return () => {
+      // Clean up to prevent memory leaks
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [destination.imageUrl, destination.id]);
   
   // Check if destination is in favorites when component mounts
   useEffect(() => {
@@ -94,23 +122,37 @@ const DestinationCard: React.FC<DestinationCardProps> = ({
     });
   };
   
+  // Get the appropriate image to display
+  const backgroundImage = imageError 
+    ? fallbackImage 
+    : (imageLoaded ? destination.imageUrl : '');
+
   return (
     <Card className="overflow-hidden h-full hover-scale glass-card transition-all">
       <div 
         className="h-48 bg-cover bg-center cursor-pointer relative group"
         style={{ 
-          backgroundImage: imageLoaded && !imageError ? `url(${destination.imageUrl})` : 'none',
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
           backgroundColor: 'rgb(243, 244, 246)' // Light gray background as fallback
         }}
         onClick={() => onOpenVideo(destination.videoUrl)}
       >
-        {(!imageLoaded || imageError) && (
+        {(!imageLoaded && !imageError) && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="animate-pulse text-sm text-muted-foreground">
-              {imageError ? 'Image unavailable' : 'Loading image...'}
+              Loading image...
             </div>
           </div>
         )}
+        
+        {(imageError && !fallbackImage) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="text-sm text-muted-foreground">
+              Image unavailable
+            </div>
+          </div>
+        )}
+        
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <div className="bg-white/90 rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform">
             <svg 
