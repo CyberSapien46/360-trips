@@ -1,12 +1,79 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Separator } from "@/components/ui/separator";
-import { Handshake, Building2, Globe, Hotel, CreditCard, Headphones } from 'lucide-react';
+import { Handshake, Building2, Globe, Hotel, CreditCard, Headphones, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
 
 const Partnerships = () => {
+  const [formOpen, setFormOpen] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    companyName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    partnerType: '',
+    message: '',
+    agreeTerms: false
+  });
+  const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, agreeTerms: checked }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.agreeTerms) {
+      toast({
+        title: "Please agree to terms",
+        description: "You must agree to our terms and conditions to proceed.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Here you would typically send the data to your backend
+    console.log("Partnership application submitted:", formData);
+    
+    // Show success state
+    setFormSubmitted(true);
+    
+    // Reset form after 3 seconds and close dialog
+    setTimeout(() => {
+      setFormSubmitted(false);
+      setFormOpen(false);
+      setFormData({
+        companyName: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        partnerType: '',
+        message: '',
+        agreeTerms: false
+      });
+    }, 3000);
+
+    toast({
+      title: "Application Received!",
+      description: "We've received your partnership application and will be in touch soon.",
+    });
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-12 px-4">
@@ -105,10 +172,136 @@ const Partnerships = () => {
             Interested in partnering with 360° Trips? Fill out our partnership inquiry form, and our team will 
             contact you to discuss how we can collaborate to create amazing travel experiences.
           </p>
-          <Button size="lg" className="px-8">
+          <Button size="lg" className="px-8" onClick={() => setFormOpen(true)}>
             Apply for Partnership
           </Button>
         </div>
+
+        <Dialog open={formOpen} onOpenChange={setFormOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>{formSubmitted ? "Application Received!" : "Partnership Application"}</DialogTitle>
+              <DialogDescription>
+                {formSubmitted 
+                  ? "Thank you for your interest in partnering with 360° Trips. Our team will review your application and be in touch soon."
+                  : "Please fill out the form below to apply for a partnership with 360° Trips."
+                }
+              </DialogDescription>
+            </DialogHeader>
+            
+            {formSubmitted ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                <p className="text-center text-gray-600">
+                  We've received your application and will contact you within 2-3 business days.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Company Name *</Label>
+                    <Input 
+                      id="companyName" 
+                      name="companyName" 
+                      value={formData.companyName} 
+                      onChange={handleInputChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactName">Contact Person *</Label>
+                    <Input 
+                      id="contactName" 
+                      name="contactName" 
+                      value={formData.contactName} 
+                      onChange={handleInputChange} 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      value={formData.email} 
+                      onChange={handleInputChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      type="tel" 
+                      value={formData.phone} 
+                      onChange={handleInputChange} 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="partnerType">Partnership Type *</Label>
+                  <select 
+                    id="partnerType" 
+                    name="partnerType" 
+                    value={formData.partnerType} 
+                    onChange={handleInputChange} 
+                    required
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>Select partnership type</option>
+                    <option value="Tourism Board">Tourism Board</option>
+                    <option value="Hotel/Resort">Hotel/Resort</option>
+                    <option value="Tour Operator">Tour Operator</option>
+                    <option value="Payment Partner">Payment Partner</option>
+                    <option value="Technology Provider">Technology Provider</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Tell us about your company and how you'd like to partner *</Label>
+                  <Textarea 
+                    id="message" 
+                    name="message" 
+                    value={formData.message} 
+                    onChange={handleInputChange} 
+                    required
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="agreeTerms" 
+                    checked={formData.agreeTerms} 
+                    onCheckedChange={handleCheckboxChange} 
+                  />
+                  <label 
+                    htmlFor="agreeTerms" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I agree to the terms and conditions and privacy policy
+                  </label>
+                </div>
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Submit Application</Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
         
         <div className="mt-16 pt-8 border-t">
           <h3 className="text-xl font-semibold mb-6">Current Partners</h3>

@@ -109,7 +109,7 @@ const FAQ = () => {
         <Separator className="mb-8" />
         
         <div className="max-w-4xl mx-auto mb-12">
-          <p className="text-xl text-gray-600">
+          <p className="text-lg text-gray-600">
             Find answers to commonly asked questions about our virtual reality travel experiences, 
             booking process, and travel packages.
           </p>
@@ -118,14 +118,14 @@ const FAQ = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           {faqCategories.map((category, categoryIndex) => (
             <div key={categoryIndex}>
-              <h2 className="text-2xl font-semibold mb-4">{category.category}</h2>
+              <h2 className="text-xl font-semibold mb-4">{category.category}</h2>
               <Accordion type="single" collapsible className="border rounded-lg overflow-hidden">
                 {category.questions.map((faq, faqIndex) => (
                   <AccordionItem key={faqIndex} value={`item-${categoryIndex}-${faqIndex}`}>
-                    <AccordionTrigger className="px-4 text-left hover:no-underline">
+                    <AccordionTrigger className="px-4 text-left text-base hover:no-underline">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 text-gray-600">
+                    <AccordionContent className="px-4 pb-4 pt-1 text-sm text-gray-600">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
@@ -136,8 +136,8 @@ const FAQ = () => {
         </div>
         
         <div className="max-w-3xl mx-auto mt-16 text-center">
-          <h2 className="text-2xl font-semibold mb-4">Still Have Questions?</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Still Have Questions?</h2>
+          <p className="text-gray-600 mb-8 text-sm">
             If you couldn't find the answer to your question, please don't hesitate to contact us.
             Our customer support team is available 7 days a week to assist you.
           </p>
