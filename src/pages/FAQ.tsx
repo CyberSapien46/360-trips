@@ -3,6 +3,7 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Separator } from "@/components/ui/separator";
 import { HelpCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
