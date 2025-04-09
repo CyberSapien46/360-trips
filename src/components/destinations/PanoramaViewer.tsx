@@ -1,6 +1,7 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { Loader } from 'lucide-react';
 
 interface PanoramaViewerProps {
   imageUrl: string;
@@ -10,9 +11,24 @@ interface PanoramaViewerProps {
 const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    if (!containerRef.current || isInitializedRef.current) return;
+    if (!containerRef.current) return;
+    
+    // Reset state when image URL changes
+    setIsLoading(true);
+    setError(null);
+    
+    // If already initialized, clean up previous scene
+    if (isInitializedRef.current) {
+      const container = containerRef.current;
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      isInitializedRef.current = false;
+    }
     
     let scene: THREE.Scene;
     let camera: THREE.PerspectiveCamera;
@@ -28,38 +44,63 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
       const container = containerRef.current;
       if (!container) return;
       
-      scene = new THREE.Scene();
-      
-      camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 1100);
-      camera.position.z = 0.01;
-      
-      // Create a sphere and add a panoramic texture to it
-      const geometry = new THREE.SphereGeometry(500, 60, 40);
-      geometry.scale(-1, 1, 1); // Invert the sphere so we're inside it
-      
-      const texture = new THREE.TextureLoader().load(imageUrl, undefined, undefined, (error) => {
-        console.error('Error loading panorama texture:', error);
-      });
-      texture.colorSpace = THREE.SRGBColorSpace;
-      
-      const material = new THREE.MeshBasicMaterial({ map: texture });
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
-      
-      renderer = new THREE.WebGLRenderer();
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      container.appendChild(renderer.domElement);
-      
-      // Event listeners for mouse/touch interaction
-      container.addEventListener('pointerdown', onPointerDown);
-      container.addEventListener('pointermove', onPointerMove);
-      container.addEventListener('pointerup', onPointerUp);
-      container.addEventListener('wheel', onDocumentMouseWheel);
-      
-      window.addEventListener('resize', onWindowResize);
-      
-      isInitializedRef.current = true;
+      try {
+        scene = new THREE.Scene();
+        
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 1100);
+        camera.position.z = 0.01;
+        
+        // Create a sphere and add a panoramic texture to it
+        const geometry = new THREE.SphereGeometry(500, 60, 40);
+        geometry.scale(-1, 1, 1); // Invert the sphere so we're inside it
+        
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = 'anonymous'; // Ensure cross-origin images load properly
+        
+        // Add a basic material first (will be replaced when texture loads)
+        const material = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        
+        console.log('Loading panorama texture from URL:', imageUrl);
+        
+        textureLoader.load(
+          imageUrl,
+          (texture) => {
+            console.log('Panorama texture loaded successfully');
+            texture.colorSpace = THREE.SRGBColorSpace;
+            mesh.material = new THREE.MeshBasicMaterial({ map: texture });
+            setIsLoading(false);
+          },
+          (progressEvent) => {
+            console.log('Loading progress:', progressEvent);
+          },
+          (error) => {
+            console.error('Error loading panorama texture:', error);
+            setError('Failed to load panorama image. Please try again later.');
+            setIsLoading(false);
+          }
+        );
+        
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+        
+        // Event listeners for mouse/touch interaction
+        container.addEventListener('pointerdown', onPointerDown);
+        container.addEventListener('pointermove', onPointerMove);
+        container.addEventListener('pointerup', onPointerUp);
+        container.addEventListener('wheel', onDocumentMouseWheel);
+        
+        window.addEventListener('resize', onWindowResize);
+        
+        isInitializedRef.current = true;
+      } catch (err) {
+        console.error('Error initializing 360 viewer:', err);
+        setError('Failed to initialize 360° viewer. Please try refreshing the page.');
+        setIsLoading(false);
+      }
     };
     
     const onWindowResize = () => {
@@ -153,9 +194,26 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
       ref={containerRef} 
       className={`relative w-full aspect-video rounded-lg overflow-hidden ${className}`}
     >
-      <div className="absolute inset-0 flex items-center justify-center bg-muted">
-        <div className="animate-pulse">Loading 360° view...</div>
-      </div>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted">
+          <div className="flex flex-col items-center">
+            <Loader className="h-8 w-8 animate-spin text-primary mb-2" />
+            <div>Loading 360° view...</div>
+          </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 text-center p-4">
+          <div className="bg-background rounded-lg p-4 shadow-lg max-w-sm">
+            <p className="text-destructive font-medium mb-2">Error Loading 360° View</p>
+            <p className="text-sm">{error}</p>
+            <p className="text-xs mt-2 text-muted-foreground">
+              Please try a different destination or check your internet connection.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
