@@ -16,6 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ForgotPasswordForm from './ForgotPasswordForm';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -31,6 +38,7 @@ const LoginForm = () => {
   const location = useLocation();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   const from = location.state?.from || '/profile';
   
@@ -71,7 +79,7 @@ const LoginForm = () => {
   };
   
   if (isAuthenticated && !authLoading) {
-    return null; // Will redirect via useEffect
+    return null;
   }
   
   return (
@@ -115,6 +123,16 @@ const LoginForm = () => {
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
+          
+          <Button
+            type="button"
+            variant="link"
+            className="w-full"
+            onClick={() => setShowForgotPassword(true)}
+          >
+            Forgot password?
+          </Button>
+
           <div className="text-sm text-center">
             <span className="text-muted-foreground">Don't have an account? </span>
             <Button 
@@ -128,6 +146,15 @@ const LoginForm = () => {
         </form>
       </Form>
       
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+          </DialogHeader>
+          <ForgotPasswordForm />
+        </DialogContent>
+      </Dialog>
+
       <div className="relative my-8">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-muted" />
