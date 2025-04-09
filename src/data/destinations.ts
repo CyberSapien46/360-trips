@@ -474,20 +474,54 @@ export const destinations: DestinationWithTourDetails[] = [
   }
 ];
 
-// Update a few destinations to add panorama URLs - using higher quality images with appropriate URL query parameters
+// Update ALL destinations to have panorama URLs - using high-quality panorama-suitable images
 destinations.forEach(dest => {
-  // For demonstration, we'll use full quality panorama-suitable images
-  if (dest.id === 'd1') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?q=80&w=2000&auto=format&fit=crop';
-  } else if (dest.id === 'd2') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2000&auto=format&fit=crop';
-  } else if (dest.id === 'd3') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?q=80&w=2000&auto=format&fit=crop';
-  } else if (dest.id === 'd14') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1578662996442-48f1845c43a0?q=80&w=2000&auto=format&fit=crop';
-  } else if (dest.id === 'd17') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1583505093722-63ab271570d7?q=80&w=2000&auto=format&fit=crop';
-  } else if (dest.id === 'd24') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1584974292709-5c2f0619971b?q=80&w=2000&auto=format&fit=crop';
+  // We'll assign panorama URLs to all destinations based on their ID number or type
+  const idNumber = parseInt(dest.id.replace('d', ''));
+  
+  // Use different panoramas based on ID modulo to create variety
+  switch (idNumber % 5) {
+    case 0:
+      dest.panoramaUrl = 'https://images.unsplash.com/photo-1599420425731-e5593a454048?q=80&w=2000&auto=format&fit=crop';
+      break;
+    case 1:
+      dest.panoramaUrl = 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?q=80&w=2000&auto=format&fit=crop';
+      break;
+    case 2:
+      dest.panoramaUrl = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2000&auto=format&fit=crop';
+      break;
+    case 3:
+      dest.panoramaUrl = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?q=80&w=2000&auto=format&fit=crop';
+      break;
+    case 4:
+      dest.panoramaUrl = 'https://images.unsplash.com/photo-1584974292709-5c2f0619971b?q=80&w=2000&auto=format&fit=crop';
+      break;
+  }
+
+  // For beach destinations, use beach panoramas
+  if (dest.name.toLowerCase().includes('beach') || dest.name.toLowerCase().includes('goa')) {
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?q=80&w=2000&auto=format&fit=crop';
+  }
+  
+  // For mountain destinations
+  if (dest.name.toLowerCase().includes('mountain') || 
+      dest.name.toLowerCase().includes('hill') || 
+      dest.name.toLowerCase().includes('ladakh') ||
+      dest.name.toLowerCase().includes('darjeeling')) {
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?q=80&w=2000&auto=format&fit=crop';
+  }
+  
+  // For temples/religious sites
+  if (dest.name.toLowerCase().includes('temple') || 
+      dest.name.toLowerCase().includes('taj') ||
+      dest.name.toLowerCase().includes('church')) {
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1466442929976-97f336a657be?q=80&w=2000&auto=format&fit=crop';
+  }
+  
+  // For waterfalls and lakes
+  if (dest.name.toLowerCase().includes('waterfall') || 
+      dest.name.toLowerCase().includes('lake') ||
+      dest.name.toLowerCase().includes('river')) {
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?q=80&w=2000&auto=format&fit=crop';
   }
 });

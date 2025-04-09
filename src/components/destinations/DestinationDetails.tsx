@@ -31,6 +31,9 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
 }) => {
   const [view, setView] = useState<'regular' | '360'>('regular');
   
+  // Make sure we always have a panorama URL, fallback to regular image if needed
+  const panoramaUrl = destination.panoramaUrl || destination.imageUrl;
+  
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
@@ -151,7 +154,7 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                 </div>
                 
                 <PanoramaViewer 
-                  imageUrl={destination.panoramaUrl || destination.imageUrl} 
+                  imageUrl={panoramaUrl} 
                   className="h-[400px] mb-6 shadow-lg"
                 />
                 

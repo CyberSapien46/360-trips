@@ -37,7 +37,9 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
       const geometry = new THREE.SphereGeometry(500, 60, 40);
       geometry.scale(-1, 1, 1); // Invert the sphere so we're inside it
       
-      const texture = new THREE.TextureLoader().load(imageUrl);
+      const texture = new THREE.TextureLoader().load(imageUrl, undefined, undefined, (error) => {
+        console.error('Error loading panorama texture:', error);
+      });
       texture.colorSpace = THREE.SRGBColorSpace;
       
       const material = new THREE.MeshBasicMaterial({ map: texture });
