@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const formSchema = z.object({
   password: z.string().min(8, {
@@ -31,6 +32,8 @@ const formSchema = z.object({
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,21 +43,38 @@ const ResetPassword = () => {
     },
   });
 
+  // Check if we have a valid session from the reset link
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      console.log("Current session on reset page:", data.session);
+      
+      if (error || !data.session) {
+        console.error("No valid session for password reset:", error);
+        setTokenError(true);
+      }
+    };
+    
+    checkSession();
+  }, []);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to update password");
+      
       const { error } = await supabase.auth.updateUser({
         password: values.password
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Password updated",
-        description: "Your password has been successfully updated.",
-      });
+      console.log("Password updated successfully");
       
-      navigate('/login');
+      // Show success dialog
+      setShowSuccessDialog(true);
+      
     } catch (error) {
       console.error('Password update error:', error);
       toast({
@@ -66,6 +86,31 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
+
+  const handleDialogClose = () => {
+    setShowSuccessDialog(false);
+    navigate('/login');
+  };
+
+  if (tokenError) {
+    return (
+      <MainLayout>
+        <div className="min-h-[80vh] py-16 flex items-center">
+          <div className="container max-w-md">
+            <div className="bg-white p-8 rounded-xl shadow-subtle text-center">
+              <h1 className="text-2xl font-bold mb-4">Invalid or Expired Link</h1>
+              <p className="text-muted-foreground mb-6">
+                The password reset link you used is invalid or has expired. Please request a new password reset link.
+              </p>
+              <Button onClick={() => navigate('/login')}>
+                Back to Login
+              </Button>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -124,6 +169,23 @@ const ResetPassword = () => {
           </div>
         </div>
       </div>
+      
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={handleDialogClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Password Updated Successfully</DialogTitle>
+            <DialogDescription>
+              Your password has been updated. You can now log in with your new password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center mt-4">
+            <Button onClick={handleDialogClose}>
+              Go to Login
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
