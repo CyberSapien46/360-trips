@@ -23,6 +23,9 @@ type AuthContextType = {
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  grantAdminAccess: (email: string) => Promise<void>;
+  revokeAdminAccess: (email: string) => Promise<void>;
+  adminEmails: string[];
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,10 +42,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [adminEmails, setAdminEmails] = useState<string[]>(ADMIN_EMAILS);
 
   // Helper function to extract profile data from DB result and session
   const createUserProfile = (userData: any, userSession: Session): UserProfile => {
-    const isAdmin = ADMIN_EMAILS.includes(userSession.user.email || '');
+    const isAdmin = adminEmails.includes(userSession.user.email || '');
     return {
       id: userSession.user.id,
       name: userData?.name || userSession.user.user_metadata?.name || 'User',
@@ -312,6 +316,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const grantAdminAccess = async (email: string) => {
+    try {
+      if (!user?.isAdmin) {
+        throw new Error('Only admins can grant admin privileges');
+      }
+      
+      if (adminEmails.includes(email)) {
+        toast({
+          description: "This user already has admin access",
+        });
+        return;
+      }
+      
+      // In a real app, you might store this in a database table
+      // Here we're just updating the state
+      const updatedAdminEmails = [...adminEmails, email];
+      setAdminEmails(updatedAdminEmails);
+      
+      toast({
+        title: "Admin access granted",
+        description: `Admin privileges have been granted to ${email}`,
+      });
+    } catch (error) {
+      console.error('Error granting admin access:', error);
+      toast({
+        title: "Failed to grant admin access",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const revokeAdminAccess = async (email: string) => {
+    try {
+      if (!user?.isAdmin) {
+        throw new Error('Only admins can revoke admin privileges');
+      }
+      
+      if (email === user.email) {
+        throw new Error('You cannot revoke your own admin privileges');
+      }
+      
+      if (!adminEmails.includes(email)) {
+        toast({
+          description: "This user doesn't have admin access",
+        });
+        return;
+      }
+      
+      // In a real app, you might update this in a database table
+      const updatedAdminEmails = adminEmails.filter(e => e !== email);
+      setAdminEmails(updatedAdminEmails);
+      
+      toast({
+        title: "Admin access revoked",
+        description: `Admin privileges have been revoked from ${email}`,
+      });
+    } catch (error) {
+      console.error('Error revoking admin access:', error);
+      toast({
+        title: "Failed to revoke admin access",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -323,6 +396,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signup,
         logout,
         updateProfile,
+        grantAdminAccess,
+        revokeAdminAccess,
+        adminEmails,
       }}
     >
       {children}
