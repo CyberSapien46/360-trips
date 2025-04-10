@@ -478,53 +478,53 @@ export const destinations: DestinationWithTourDetails[] = [
 destinations.forEach(dest => {
   // Base panorama URL for each destination type
   if (dest.name === 'Taj Mahal') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Varanasi Ghats') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1561361058-c24e021e2537?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1518623489648-a173ef7824f3?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Kerala Backwaters') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Munnar Tea Gardens') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1599489069718-6eab8cf1f76f?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Goa Beaches') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Old Goa Churches') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1544963151-fb47c1a06478?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1532686255137-7359c4e2b8a6?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Jaisalmer Desert Safari') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1590077428713-a1c561c7c026?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1488197047962-b48492212cda?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Udaipur City Palace') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1603204706569-2e00b325d84c?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1496275068113-fff8c90750d1?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Ladakh Monasteries') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1573133430464-9b53767c7eb1?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Magnetic Hill & Confluence') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1555400038-63f5ba517a47?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Darjeeling Tea Gardens') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1598359007821-77c321a20b62?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Sundarbans National Park') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1507808973436-a4ed7b5e87c9?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Meenakshi Temple') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1606298855672-1f19b31e9ae2?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1523059623039-a9ed027e7fad?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Pondicherry French Quarter') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1568454537842-d933259bb1ce?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1455218873509-8097305ee378?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Andaman Islands') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1517957754642-7329bfa4cb6e?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Cellular Jail & Radhanagar Beach') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1564419320461-6870880221ad?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Rishikesh Adventure') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1544034890-d85075bd6546?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Valley of Flowers Trek') {
     dest.panoramaUrl = 'https://images.unsplash.com/photo-1472213984618-c79aaec7fef0?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Hampi Ruins') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1590732488817-2c9f4e4f7add?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1455156218388-5e61b526818b?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Coorg Coffee Plantations') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Konark Sun Temple') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1623161551727-6a0ae5fb1f85?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1445548671936-e3523ed9b49a?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Chilika Lake') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1518623001395-125242310d0c?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1518623489648-a173ef7824f3?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Kaziranga National Park') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1616450034633-4ced4ac1eafa?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1549554899-9afcc2a6562c?q=80&w=2000&auto=format&fit=crop';
   } else if (dest.name === 'Majuli River Island') {
-    dest.panoramaUrl = 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?q=80&w=2000&auto=format&fit=crop';
+    dest.panoramaUrl = 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2000&auto=format&fit=crop';
   } else {
     // Fallback based on destination type
     if (dest.name.toLowerCase().includes('beach') || dest.name.toLowerCase().includes('goa')) {

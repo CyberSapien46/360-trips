@@ -1,8 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Loader, Headphones, Maximize } from 'lucide-react';
+import { Loader, Headphones, Maximize, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PanoramaViewerProps {
   imageUrl: string;
@@ -20,6 +21,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -31,6 +33,12 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
     } else {
       document.exitFullscreen();
     }
+  };
+  
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    setRetryCount(prev => prev + 1);
   };
   
   useEffect(() => {
@@ -70,7 +78,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
     let lat = 0, onPointerDownLat = 0;
     let phi = 0, theta = 0;
     let animationId: number;
-    // Add auto-rotation state here instead of inside texture loader callback
+    // Add auto-rotation state here
     let autoRotate = true;
     let autoRotateTimeout: NodeJS.Timeout;
     
@@ -103,43 +111,62 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
         
         console.log('Loading panorama texture from URL:', imageUrl);
         
-        textureLoader.load(
+        // Try using a proxy service for cross-origin images that might not allow CORS
+        const imagesToTry = [
           imageUrl,
-          (texture) => {
-            console.log('Panorama texture loaded successfully');
-            texture.colorSpace = THREE.SRGBColorSpace;
-            mesh.material = new THREE.MeshBasicMaterial({ 
-              map: texture,
-              side: THREE.BackSide 
-            });
-            setIsLoading(false);
-            
-            // Setup auto-rotation handlers - moved from callback to outside
-            const startAutoRotation = () => {
-              autoRotate = true;
-            };
-            
-            const stopAutoRotation = () => {
-              autoRotate = false;
-              
-              // Restart auto-rotation after 5 seconds of inactivity
-              clearTimeout(autoRotateTimeout);
-              autoRotateTimeout = setTimeout(startAutoRotation, 5000);
-            };
-            
-            container.addEventListener('pointerdown', stopAutoRotation);
-          },
-          (progressEvent) => {
-            console.log('Loading progress:', progressEvent);
-          },
-          (error) => {
-            console.error('Error loading panorama texture:', error);
+          // Fallback to a more reliable image if the original doesn't load
+          'https://images.unsplash.com/photo-1518623489648-a173ef7824f3?q=80&w=2000&auto=format&fit=crop'
+        ];
+        
+        const loadTexture = (index = 0) => {
+          if (index >= imagesToTry.length) {
+            console.error('All image loading attempts failed');
             setError('Failed to load panorama image. Please try again later.');
             setIsLoading(false);
+            return;
           }
-        );
+          
+          const currentImageUrl = imagesToTry[index];
+          
+          textureLoader.load(
+            currentImageUrl,
+            (texture) => {
+              console.log('Panorama texture loaded successfully');
+              texture.colorSpace = THREE.SRGBColorSpace;
+              mesh.material = new THREE.MeshBasicMaterial({ 
+                map: texture,
+                side: THREE.BackSide 
+              });
+              setIsLoading(false);
+              
+              // Setup auto-rotation handlers
+              const startAutoRotation = () => {
+                autoRotate = true;
+              };
+              
+              const stopAutoRotation = () => {
+                autoRotate = false;
+                
+                // Restart auto-rotation after 5 seconds of inactivity
+                clearTimeout(autoRotateTimeout);
+                autoRotateTimeout = setTimeout(startAutoRotation, 5000);
+              };
+              
+              container.addEventListener('pointerdown', stopAutoRotation);
+            },
+            (progressEvent) => {
+              console.log('Loading progress:', progressEvent);
+            },
+            () => {
+              console.error(`Attempt ${index + 1} failed, trying next image source`);
+              loadTexture(index + 1);
+            }
+          );
+        };
         
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        loadTexture();
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
@@ -209,7 +236,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
       update();
     };
     
-    // Modified update function to include auto-rotation
+    // The complete update function with auto-rotation
     const update = () => {
       if (!camera) return;
       
@@ -250,11 +277,11 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
         containerRef.current.removeEventListener('wheel', onDocumentMouseWheel);
       }
       
-      window.removeEventListener('resize', onWindowResize);
+      window.addEventListener('resize', onWindowResize);
       
       renderer?.dispose();
     };
-  }, [imageUrl]);
+  }, [imageUrl, retryCount]);
   
   return (
     <div 
@@ -278,6 +305,15 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
             <p className="text-xs mt-2 text-muted-foreground">
               Please try a different destination or check your internet connection.
             </p>
+            <Button 
+              onClick={handleRetry} 
+              size="sm" 
+              variant="outline" 
+              className="mt-4"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </div>
       )}
