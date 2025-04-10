@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, MapPin, Calendar, Clock, IndianRupee, Check, Plus, Star, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -149,32 +148,26 @@ const DestinationDetails: React.FC<DestinationDetailsProps> = ({
                 <div className="bg-muted/20 rounded-lg p-4 text-muted-foreground mb-4">
                   <p className="text-sm">
                     Use your mouse or touch to look around in 360°. Scroll to zoom in and out.
-                    Experience {destination.name} as if you were actually there!
+                    Experience {destination.name} as if you were actually there! For a fully immersive 
+                    experience, try the "Enter VR View" button.
                   </p>
                 </div>
                 
                 <PanoramaViewer 
                   imageUrl={panoramaUrl} 
+                  destinationName={destination.name}
                   className="h-[400px] mb-6 shadow-lg"
                 />
                 
                 <div className="mt-6">
-                  <h4 className="font-medium mb-2">Key Viewpoints</h4>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4].map((point) => (
-                      <div 
-                        key={point}
-                        className="aspect-square bg-muted rounded-md overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all"
-                        onClick={() => console.log(`Viewpoint ${point} clicked`)}
-                      >
-                        <img 
-                          src={destination.imageUrl} 
-                          alt={`Viewpoint ${point}`} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <h4 className="font-medium mb-2">Want to experience this in true VR?</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Book a VR demo session and our team will bring professional VR equipment 
+                    to your home for an immersive virtual tour of {destination.name} and other destinations.
+                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <a href="/vr-booking">Book VR Experience</a>
+                  </Button>
                 </div>
               </div>
             </TabsContent>

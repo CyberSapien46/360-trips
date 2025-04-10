@@ -1,18 +1,49 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Loader } from 'lucide-react';
+import { Loader, Headphones, Maximize } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PanoramaViewerProps {
   imageUrl: string;
   className?: string;
+  destinationName?: string;
 }
 
-const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '' }) => {
+const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ 
+  imageUrl, 
+  className = '',
+  destinationName 
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
   
   useEffect(() => {
     if (!containerRef.current) return;
@@ -38,6 +69,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
     let lon = 0, onPointerDownLon = 0;
     let lat = 0, onPointerDownLat = 0;
     let phi = 0, theta = 0;
+    let animationId: number;
     
     // Initialize the scene
     const init = () => {
@@ -58,7 +90,11 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
         textureLoader.crossOrigin = 'anonymous'; // Ensure cross-origin images load properly
         
         // Add a basic material first (will be replaced when texture loads)
-        const material = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const material = new THREE.MeshBasicMaterial({ 
+          color: 0x222222,
+          wireframe: false,
+          side: THREE.BackSide
+        });
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         
@@ -69,8 +105,38 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
           (texture) => {
             console.log('Panorama texture loaded successfully');
             texture.colorSpace = THREE.SRGBColorSpace;
-            mesh.material = new THREE.MeshBasicMaterial({ map: texture });
+            mesh.material = new THREE.MeshBasicMaterial({ 
+              map: texture,
+              side: THREE.BackSide 
+            });
             setIsLoading(false);
+            
+            // Auto-rotate camera slightly for immersive effect
+            let autoRotate = true;
+            let autoRotateTimeout: NodeJS.Timeout;
+            
+            const startAutoRotation = () => {
+              autoRotate = true;
+            };
+            
+            const stopAutoRotation = () => {
+              autoRotate = false;
+              
+              // Restart auto-rotation after 5 seconds of inactivity
+              clearTimeout(autoRotateTimeout);
+              autoRotateTimeout = setTimeout(startAutoRotation, 5000);
+            };
+            
+            container.addEventListener('pointerdown', stopAutoRotation);
+            
+            // Modify update function to include auto-rotation
+            const originalUpdate = update;
+            update = () => {
+              if (autoRotate) {
+                lon += 0.05;
+              }
+              originalUpdate();
+            };
           },
           (progressEvent) => {
             console.log('Loading progress:', progressEvent);
@@ -82,7 +148,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
           }
         );
         
-        renderer = new THREE.WebGLRenderer();
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
@@ -148,7 +214,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
     };
     
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
       update();
     };
     
@@ -172,6 +238,10 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
     
     // Clean up
     return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      
       if (containerRef.current && renderer) {
         containerRef.current.removeChild(renderer.domElement);
       }
@@ -198,7 +268,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
         <div className="absolute inset-0 flex items-center justify-center bg-muted">
           <div className="flex flex-col items-center">
             <Loader className="h-8 w-8 animate-spin text-primary mb-2" />
-            <div>Loading 360° view...</div>
+            <div>Loading {destinationName ? destinationName + " in" : ""} 360° view...</div>
           </div>
         </div>
       )}
@@ -212,6 +282,31 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({ imageUrl, className = '
               Please try a different destination or check your internet connection.
             </p>
           </div>
+        </div>
+      )}
+      
+      {!isLoading && !error && (
+        <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+          <Button 
+            onClick={toggleFullscreen} 
+            size="sm" 
+            variant="secondary" 
+            className="backdrop-blur-sm bg-black/30 text-white hover:bg-black/50"
+          >
+            <Maximize className="h-4 w-4 mr-2" />
+            {isFullscreen ? "Exit VR View" : "Enter VR View"}
+          </Button>
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="backdrop-blur-sm bg-black/30 text-white hover:bg-black/50"
+            asChild
+          >
+            <a href="/vr-booking">
+              <Headphones className="h-4 w-4 mr-2" />
+              Book VR Demo
+            </a>
+          </Button>
         </div>
       )}
     </div>
