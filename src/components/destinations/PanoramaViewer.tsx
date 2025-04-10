@@ -70,6 +70,9 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
     let lat = 0, onPointerDownLat = 0;
     let phi = 0, theta = 0;
     let animationId: number;
+    // Add auto-rotation state here instead of inside texture loader callback
+    let autoRotate = true;
+    let autoRotateTimeout: NodeJS.Timeout;
     
     // Initialize the scene
     const init = () => {
@@ -111,10 +114,7 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
             });
             setIsLoading(false);
             
-            // Auto-rotate camera slightly for immersive effect
-            let autoRotate = true;
-            let autoRotateTimeout: NodeJS.Timeout;
-            
+            // Setup auto-rotation handlers - moved from callback to outside
             const startAutoRotation = () => {
               autoRotate = true;
             };
@@ -128,15 +128,6 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
             };
             
             container.addEventListener('pointerdown', stopAutoRotation);
-            
-            // Modify update function to include auto-rotation
-            const originalUpdate = update;
-            update = () => {
-              if (autoRotate) {
-                lon += 0.05;
-              }
-              originalUpdate();
-            };
           },
           (progressEvent) => {
             console.log('Loading progress:', progressEvent);
@@ -218,8 +209,14 @@ const PanoramaViewer: React.FC<PanoramaViewerProps> = ({
       update();
     };
     
+    // Modified update function to include auto-rotation
     const update = () => {
       if (!camera) return;
+      
+      // Apply auto-rotation if enabled
+      if (autoRotate) {
+        lon += 0.05;
+      }
       
       lat = Math.max(-85, Math.min(85, lat));
       phi = THREE.MathUtils.degToRad(90 - lat);
