@@ -3,7 +3,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import LoginForm from '@/components/auth/LoginForm';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   return (
@@ -47,6 +48,13 @@ const Login = () => {
                     Sign in to your ExploreVR account
                   </p>
                 </div>
+                
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    For admin access, use admin@example.com with password: admin123
+                  </AlertDescription>
+                </Alert>
                 
                 <LoginForm />
                 
