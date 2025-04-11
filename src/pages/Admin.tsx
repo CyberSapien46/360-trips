@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -7,11 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, User, Calendar, Package, UserPlus, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { ShieldCheck, User, Calendar, Package, UserPlus, AlertCircle, CheckCircle2, Clock, Loader2, Map, Edit, Plus, Trash } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
+import { destinations } from '@/data/destinations';
+import { Textarea } from '@/components/ui/textarea';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Table,
   TableBody,
@@ -21,6 +26,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const destinationSchema = z.object({
+  id: z.string().min(1, "ID is required"),
+  name: z.string().min(1, "Name is required"),
+  location: z.string().min(1, "Location is required"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  duration: z.string().min(1, "Duration is required"),
+  price: z.number().min(1000, "Price must be at least 1000"),
+  rating: z.number().min(0).max(5, "Rating must be between 0 and 5"),
+  videoUrl: z.string().url("Must be a valid URL"),
+  imageUrl: z.string().url("Must be a valid URL"),
+  panoramaUrl: z.string().url("Must be a valid URL").optional(),
+  accommodation: z.string().optional(),
+});
 
 const Admin = () => {
   const { user, isAuthenticated, isAdmin, isLoading, grantAdminAccess, revokeAdminAccess, adminEmails } = useAuth();
@@ -35,7 +54,29 @@ const Admin = () => {
     pendingQuotes: 0,
     totalPackages: 0,
   });
+  const [destinationsList, setDestinationsList] = useState([...destinations]);
+  const [isAddDestinationOpen, setIsAddDestinationOpen] = useState(false);
+  const [editingDestination, setEditingDestination] = useState<any>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  
   const navigate = useNavigate();
+
+  const form = useForm<z.infer<typeof destinationSchema>>({
+    resolver: zodResolver(destinationSchema),
+    defaultValues: {
+      id: "",
+      name: "",
+      location: "",
+      description: "",
+      duration: "",
+      price: 5000,
+      rating: 4.5,
+      videoUrl: "https://www.youtube.com/embed/...",
+      imageUrl: "https://images.unsplash.com/...",
+      panoramaUrl: "https://images.unsplash.com/...",
+      accommodation: "",
+    },
+  });
 
   useEffect(() => {
     // Redirect logic for non-admin users
@@ -59,6 +100,38 @@ const Admin = () => {
       }
     }
   }, [isAuthenticated, isAdmin, isLoading, navigate]);
+
+  useEffect(() => {
+    if (editingDestination) {
+      form.reset({
+        id: editingDestination.id,
+        name: editingDestination.name,
+        location: editingDestination.location,
+        description: editingDestination.description,
+        duration: editingDestination.duration,
+        price: editingDestination.price,
+        rating: editingDestination.rating,
+        videoUrl: editingDestination.videoUrl,
+        imageUrl: editingDestination.imageUrl,
+        panoramaUrl: editingDestination.panoramaUrl || "",
+        accommodation: editingDestination.accommodation || "",
+      });
+    } else {
+      form.reset({
+        id: `d${destinationsList.length + 1}`,
+        name: "",
+        location: "",
+        description: "",
+        duration: "",
+        price: 5000,
+        rating: 4.5,
+        videoUrl: "https://www.youtube.com/embed/...",
+        imageUrl: "https://images.unsplash.com/...",
+        panoramaUrl: "https://images.unsplash.com/...",
+        accommodation: "",
+      });
+    }
+  }, [editingDestination, form]);
 
   const fetchData = async () => {
     setFetchLoading(true);
@@ -276,6 +349,56 @@ const Admin = () => {
     });
   };
 
+  const onSubmitDestination = (values: z.infer<typeof destinationSchema>) => {
+    console.log("Destination form values:", values);
+    
+    // Convert to the expected format
+    const newDestination = {
+      ...values,
+      itinerary: [{
+        day: 1,
+        title: "Day 1",
+        description: "Explore the destination"
+      }],
+      inclusions: ["Accommodation", "Guided tours"],
+    };
+    
+    if (editingDestination) {
+      // Update existing destination
+      const updatedDestinations = destinationsList.map(dest => 
+        dest.id === values.id ? newDestination : dest
+      );
+      setDestinationsList(updatedDestinations);
+      toast({
+        description: `Destination "${values.name}" updated successfully`,
+      });
+    } else {
+      // Add new destination
+      setDestinationsList([...destinationsList, newDestination]);
+      toast({
+        description: `Destination "${values.name}" added successfully`,
+      });
+    }
+    
+    // Close dialog and reset form
+    setIsAddDestinationOpen(false);
+    setEditingDestination(null);
+  };
+
+  const handleEditDestination = (destination: any) => {
+    setEditingDestination(destination);
+    setIsAddDestinationOpen(true);
+  };
+
+  const handleDeleteDestination = (id: string) => {
+    const updatedDestinations = destinationsList.filter(dest => dest.id !== id);
+    setDestinationsList(updatedDestinations);
+    setDeleteConfirmId(null);
+    toast({
+      description: `Destination deleted successfully`,
+    });
+  };
+
   if (isLoading || fetchLoading) {
     return (
       <MainLayout>
@@ -304,7 +427,7 @@ const Admin = () => {
                 </h1>
               </div>
               <p className="text-muted-foreground">
-                Manage bookings, quote requests, and users
+                Manage bookings, quote requests, users, and destinations
               </p>
             </div>
             <Button onClick={handleRefresh} className="self-center md:self-auto">
@@ -368,11 +491,12 @@ const Admin = () => {
       <section className="py-12">
         <div className="container">
           <Tabs defaultValue="bookings" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-8">
+            <TabsList className="grid grid-cols-5 mb-8">
               <TabsTrigger value="bookings">VR Bookings</TabsTrigger>
               <TabsTrigger value="quotes">Quote Requests</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="admin">Admin Access</TabsTrigger>
+              <TabsTrigger value="destinations">Destinations</TabsTrigger>
             </TabsList>
 
             <TabsContent value="bookings">
@@ -703,9 +827,314 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+            
+            <TabsContent value="destinations">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Destination Management</CardTitle>
+                    <CardDescription>
+                      Add, edit or delete travel destinations offered by the platform.
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => {
+                    setEditingDestination(null);
+                    setIsAddDestinationOpen(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Destination
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {destinationsList.length === 0 ? (
+                    <div className="text-center py-16">
+                      <Map className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No destinations found</h3>
+                      <p className="text-muted-foreground">
+                        Add your first travel destination to get started.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Rating</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {destinationsList.map((destination) => (
+                            <TableRow key={destination.id}>
+                              <TableCell>{destination.id}</TableCell>
+                              <TableCell className="font-medium">{destination.name}</TableCell>
+                              <TableCell>{destination.location}</TableCell>
+                              <TableCell>₹{destination.price.toLocaleString()}</TableCell>
+                              <TableCell>{destination.rating}/5</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleEditDestination(destination)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                  {deleteConfirmId === destination.id ? (
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleDeleteDestination(destination.id)}
+                                      >
+                                        Confirm
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setDeleteConfirmId(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-500"
+                                      onClick={() => setDeleteConfirmId(destination.id)}
+                                    >
+                                      <Trash className="h-4 w-4 mr-1" />
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </section>
+
+      <Dialog open={isAddDestinationOpen} onOpenChange={setIsAddDestinationOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingDestination ? "Edit Destination" : "Add New Destination"}</DialogTitle>
+            <DialogDescription>
+              {editingDestination 
+                ? "Update the details of this travel destination." 
+                : "Add a new destination to your travel offerings."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitDestination)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID</FormLabel>
+                      <FormControl>
+                        <Input placeholder="d1" {...field} readOnly={!!editingDestination} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Taj Mahal" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Agra, Uttar Pradesh, India" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="An immense mausoleum of white marble..." 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duration</FormLabel>
+                      <FormControl>
+                        <Input placeholder="3 Days" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price (₹)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="5000" 
+                          {...field}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="rating"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rating (0-5)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.1" 
+                          min="0" 
+                          max="5" 
+                          placeholder="4.5" 
+                          {...field}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="accommodation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Accommodation</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Luxury hotel stay" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Video URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://www.youtube.com/embed/..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://images.unsplash.com/..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="panoramaUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Panorama URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://images.unsplash.com/..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsAddDestinationOpen(false);
+                    setEditingDestination(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingDestination ? "Update Destination" : "Add Destination"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
