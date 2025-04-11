@@ -65,14 +65,11 @@ const Admin = () => {
     try {
       console.log('Starting to fetch admin data...');
       
-      // Fetch all bookings with user details
+      // Fetch all bookings - Modified to avoid using foreign key relationship
       console.log('Fetching bookings data...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('vr_bookings')
-        .select(`
-          *,
-          profiles:user_id(name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (bookingsError) {
@@ -81,16 +78,37 @@ const Admin = () => {
       }
       
       console.log('Bookings data:', bookingsData);
-      setBookings(bookingsData || []);
+      
+      // Enhanced bookings data with user information
+      const enhancedBookings = await Promise.all((bookingsData || []).map(async (booking) => {
+        // Fetch the user profile for each booking
+        const { data: userProfile, error: userError } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', booking.user_id)
+          .single();
+          
+        if (userError) {
+          console.log('Could not fetch user for booking:', booking.id);
+          return {
+            ...booking,
+            profiles: { name: 'Unknown', email: 'Unknown' }
+          };
+        }
+        
+        return {
+          ...booking,
+          profiles: userProfile
+        };
+      }));
+      
+      setBookings(enhancedBookings || []);
 
-      // Fetch all quote requests with user details
+      // Fetch all quote requests - Modified to avoid using foreign key relationship
       console.log('Fetching quote requests...');
       const { data: quotesData, error: quotesError } = await supabase
         .from('quote_requests')
-        .select(`
-          *,
-          profiles:user_id(name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (quotesError) {
@@ -99,7 +117,31 @@ const Admin = () => {
       }
       
       console.log('Quote data:', quotesData);
-      setQuoteRequests(quotesData || []);
+      
+      // Enhanced quotes data with user information
+      const enhancedQuotes = await Promise.all((quotesData || []).map(async (quote) => {
+        // Fetch the user profile for each quote
+        const { data: userProfile, error: userError } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', quote.user_id)
+          .single();
+          
+        if (userError) {
+          console.log('Could not fetch user for quote:', quote.id);
+          return {
+            ...quote,
+            profiles: { name: 'Unknown', email: 'Unknown' }
+          };
+        }
+        
+        return {
+          ...quote,
+          profiles: userProfile
+        };
+      }));
+      
+      setQuoteRequests(enhancedQuotes || []);
 
       // Fetch all users
       console.log('Fetching users...');
@@ -117,8 +159,8 @@ const Admin = () => {
       setUsers(usersData || []);
 
       // Calculate stats
-      const activeBookingsCount = bookingsData ? bookingsData.filter(b => b.status !== 'completed' && b.status !== 'cancelled').length : 0;
-      const pendingQuotesCount = quotesData ? quotesData.filter(q => q.status === 'pending').length : 0;
+      const activeBookingsCount = enhancedBookings ? enhancedBookings.filter(b => b.status !== 'completed' && b.status !== 'cancelled').length : 0;
+      const pendingQuotesCount = enhancedQuotes ? enhancedQuotes.filter(q => q.status === 'pending').length : 0;
       
       // Get total packages count
       console.log('Fetching packages count...');
