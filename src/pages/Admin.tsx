@@ -12,6 +12,15 @@ import { toast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Admin = () => {
   const { user, isAuthenticated, isAdmin, isLoading, grantAdminAccess, revokeAdminAccess, adminEmails } = useAuth();
@@ -54,6 +63,8 @@ const Admin = () => {
   const fetchData = async () => {
     setFetchLoading(true);
     try {
+      console.log('Starting to fetch admin data...');
+      
       // Fetch all bookings with user details
       console.log('Fetching bookings data...');
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -61,12 +72,14 @@ const Admin = () => {
         .select(`
           *,
           profiles:user_id(name, email)
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
         throw bookingsError;
       }
+      
       console.log('Bookings data:', bookingsData);
       setBookings(bookingsData || []);
 
@@ -77,12 +90,14 @@ const Admin = () => {
         .select(`
           *,
           profiles:user_id(name, email)
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (quotesError) {
         console.error('Error fetching quotes:', quotesError);
         throw quotesError;
       }
+      
       console.log('Quote data:', quotesData);
       setQuoteRequests(quotesData || []);
 
@@ -97,6 +112,7 @@ const Admin = () => {
         console.error('Error fetching users:', usersError);
         throw usersError;
       }
+      
       console.log('Users data:', usersData);
       setUsers(usersData || []);
 
@@ -114,6 +130,7 @@ const Admin = () => {
         console.error('Error fetching packages count:', packagesError);
         throw packagesError;
       }
+      
       console.log('Packages count:', packagesCount);
 
       setStats({
@@ -210,6 +227,13 @@ const Admin = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchData();
+    toast({
+      description: "Refreshing admin dashboard data",
+    });
+  };
+
   if (isLoading || fetchLoading) {
     return (
       <MainLayout>
@@ -229,14 +253,21 @@ const Admin = () => {
     <MainLayout>
       <section className="pt-16 pb-8 bg-muted/50">
         <div className="container">
-          <div className="flex flex-col items-center text-center mb-8">
-            <ShieldCheck className="h-12 w-12 text-primary mb-4" />
-            <h1 className="text-4xl font-bold mb-4">
-              Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground max-w-2xl">
-              Manage bookings, quote requests, and users from this central dashboard.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div className="flex flex-col items-center md:items-start text-center md:text-left mb-4 md:mb-0">
+              <div className="flex items-center gap-3 mb-2">
+                <ShieldCheck className="h-8 w-8 text-primary" />
+                <h1 className="text-3xl font-bold">
+                  Admin Dashboard
+                </h1>
+              </div>
+              <p className="text-muted-foreground">
+                Manage bookings, quote requests, and users
+              </p>
+            </div>
+            <Button onClick={handleRefresh} className="self-center md:self-auto">
+              Refresh Data
+            </Button>
           </div>
           
           {/* Stats Cards */}
@@ -312,31 +343,37 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   {bookings.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground">No bookings found.</p>
+                    <div className="text-center py-16">
+                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No bookings found</h3>
+                      <p className="text-muted-foreground">
+                        All VR bookings will appear here when users make them.
+                      </p>
+                    </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="py-3 px-4 text-left">Date</th>
-                            <th className="py-3 px-4 text-left">Time</th>
-                            <th className="py-3 px-4 text-left">Customer</th>
-                            <th className="py-3 px-4 text-left">Address</th>
-                            <th className="py-3 px-4 text-left">Status</th>
-                            <th className="py-3 px-4 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Address</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {bookings.map((booking) => (
-                            <tr key={booking.id} className="border-b hover:bg-muted/50">
-                              <td className="py-3 px-4">{booking.date}</td>
-                              <td className="py-3 px-4">{booking.time}</td>
-                              <td className="py-3 px-4">
-                                {booking.profiles?.name}<br />
+                            <TableRow key={booking.id}>
+                              <TableCell>{booking.date}</TableCell>
+                              <TableCell>{booking.time}</TableCell>
+                              <TableCell>
+                                {booking.profiles?.name || 'Unknown'}<br />
                                 <span className="text-xs text-muted-foreground">{booking.profiles?.email}</span>
-                              </td>
-                              <td className="py-3 px-4">{booking.address}</td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>{booking.address}</TableCell>
+                              <TableCell>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                   ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                                     booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -346,8 +383,8 @@ const Admin = () => {
                                 }>
                                   {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                                 </span>
-                              </td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>
                                 <div className="flex gap-2">
                                   {booking.status === 'pending' && (
                                     <Button 
@@ -378,11 +415,11 @@ const Admin = () => {
                                     </Button>
                                   )}
                                 </div>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </CardContent>
@@ -399,33 +436,39 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   {quoteRequests.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground">No quote requests found.</p>
+                    <div className="text-center py-16">
+                      <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No quote requests found</h3>
+                      <p className="text-muted-foreground">
+                        All quote requests will appear here when users submit them.
+                      </p>
+                    </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="py-3 px-4 text-left">Date</th>
-                            <th className="py-3 px-4 text-left">Customer</th>
-                            <th className="py-3 px-4 text-left">Package IDs</th>
-                            <th className="py-3 px-4 text-left">Status</th>
-                            <th className="py-3 px-4 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Package IDs</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {quoteRequests.map((quote) => (
-                            <tr key={quote.id} className="border-b hover:bg-muted/50">
-                              <td className="py-3 px-4">{new Date(quote.created_at).toLocaleDateString()}</td>
-                              <td className="py-3 px-4">
-                                {quote.profiles?.name}<br />
+                            <TableRow key={quote.id}>
+                              <TableCell>{new Date(quote.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                {quote.profiles?.name || 'Unknown'}<br />
                                 <span className="text-xs text-muted-foreground">{quote.profiles?.email}</span>
-                              </td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>
                                 {Array.isArray(quote.package_ids) 
                                   ? quote.package_ids.join(', ')
                                   : '(No destinations)'}
-                              </td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                   ${quote.status === 'completed' ? 'bg-green-100 text-green-800' :
                                     quote.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -435,8 +478,8 @@ const Admin = () => {
                                 }>
                                   {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
                                 </span>
-                              </td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>
                                 <div className="flex gap-2">
                                   {quote.status === 'pending' && (
                                     <Button 
@@ -467,11 +510,11 @@ const Admin = () => {
                                     </Button>
                                   )}
                                 </div>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </CardContent>
@@ -488,33 +531,39 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   {users.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground">No users found.</p>
+                    <div className="text-center py-16">
+                      <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No users found</h3>
+                      <p className="text-muted-foreground">
+                        Users will appear here when they register for the site.
+                      </p>
+                    </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="py-3 px-4 text-left">Name</th>
-                            <th className="py-3 px-4 text-left">Email</th>
-                            <th className="py-3 px-4 text-left">Admin Status</th>
-                            <th className="py-3 px-4 text-left">Registered On</th>
-                            <th className="py-3 px-4 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Admin Status</TableHead>
+                            <TableHead>Registered On</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {users.map((user) => (
-                            <tr key={user.id} className="border-b hover:bg-muted/50">
-                              <td className="py-3 px-4">{user.name}</td>
-                              <td className="py-3 px-4">{user.email}</td>
-                              <td className="py-3 px-4">
+                            <TableRow key={user.id}>
+                              <TableCell>{user.name || 'Unknown'}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
                                 {adminEmails.includes(user.email) ? (
                                   <Badge variant="default" className="bg-green-500">Admin</Badge>
                                 ) : (
                                   <Badge variant="outline">User</Badge>
                                 )}
-                              </td>
-                              <td className="py-3 px-4">{new Date(user.created_at).toLocaleDateString()}</td>
-                              <td className="py-3 px-4">
+                              </TableCell>
+                              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell>
                                 {adminEmails.includes(user.email) ? (
                                   <Button 
                                     variant="outline" 
@@ -534,11 +583,11 @@ const Admin = () => {
                                     Grant Admin
                                   </Button>
                                 )}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </CardContent>
@@ -615,29 +664,6 @@ const Admin = () => {
           </Tabs>
         </div>
       </section>
-      
-      {/* Modal for detailed booking information */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <span className="hidden">Open Booking Details</span>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
-            <DialogDescription>
-              Complete information about this VR experience booking.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Booking details would be displayed here */}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" className="w-full sm:w-auto">
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 };

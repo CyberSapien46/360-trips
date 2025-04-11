@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 
 // Simple admin check - in a real app, you'd have proper roles in your DB
 const ADMIN_EMAILS = ['admin@example.com']; 
@@ -46,24 +47,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper function to extract profile data from DB result and session
   const createUserProfile = (userData: any, userSession: Session): UserProfile => {
-    // Check if this is our special admin account
-    if (userSession.user.email === 'admin@example.com') {
-      return {
-        id: userSession.user.id,
-        name: userData?.name || userSession.user.user_metadata?.name || 'Admin',
-        email: userSession.user.email,
-        photoUrl: userData?.photo_url || null,
-        isAdmin: true, // Always true for admin account
-      };
-    }
+    const userEmail = userSession.user.email || '';
     
-    const isAdmin = adminEmails.includes(userSession.user.email || '');
+    // Check if this is our special admin account or in the admin emails list
+    const isUserAdmin = userEmail === 'admin@example.com' || adminEmails.includes(userEmail);
+    
     return {
       id: userSession.user.id,
       name: userData?.name || userSession.user.user_metadata?.name || 'User',
-      email: userSession.user.email!,
+      email: userEmail,
       photoUrl: userData?.photo_url || null,
-      isAdmin: isAdmin,
+      isAdmin: isUserAdmin,
     };
   };
 
@@ -71,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (userId: string, currentSession: Session) => {
     try {
       console.log('Fetching profile for user:', userId);
+      console.log('User email:', currentSession.user.email);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -81,17 +76,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && !error) {
         console.log('Profile found:', data);
         const userProfile = createUserProfile(data, currentSession);
+        console.log('Created user profile with admin status:', userProfile.isAdmin);
         setUser(userProfile);
       } else {
         console.log('Profile not found, creating one');
+        
+        const userEmail = currentSession.user.email || '';
+        const isUserAdmin = userEmail === 'admin@example.com' || adminEmails.includes(userEmail);
+        
         // If profile doesn't exist, create one
         const userProfile: UserProfile = {
           id: userId,
           name: currentSession.user.user_metadata?.name || 'User',
-          email: currentSession.user.email!,
+          email: userEmail,
           photoUrl: null,
-          isAdmin: ADMIN_EMAILS.includes(currentSession.user.email || ''),
+          isAdmin: isUserAdmin,
         };
+        
+        console.log('Created new user profile with admin status:', userProfile.isAdmin);
         setUser(userProfile);
         
         // Create the profile in the database
@@ -100,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .insert({
             id: userId,
             name: currentSession.user.user_metadata?.name || 'User',
-            email: currentSession.user.email!,
+            email: userEmail,
             photo_url: null,
             created_at: new Date().toISOString(),
           });
@@ -120,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First, get the current session
     const initAuth = async () => {
       console.log('Initializing auth');
+      setIsLoading(true);
       
       const { data } = await supabase.auth.getSession();
       const { session: currentSession } = data;
@@ -169,18 +172,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [adminEmails]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       console.log('Attempting login for:', email);
       
-      // Special handling for admin account
-      if (email === 'admin@example.com' && password === 'admin123') {
+      // Handle admin login 
+      if (email === 'admin@example.com') {
+        console.log('Admin login detected');
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
-          password: 'admin123', // Use the admin password
+          password,
         });
         
         if (error) {
