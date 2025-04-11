@@ -46,6 +46,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper function to extract profile data from DB result and session
   const createUserProfile = (userData: any, userSession: Session): UserProfile => {
+    // Check if this is our special admin account
+    if (userSession.user.email === 'admin@example.com') {
+      return {
+        id: userSession.user.id,
+        name: userData?.name || userSession.user.user_metadata?.name || 'Admin',
+        email: userSession.user.email,
+        photoUrl: userData?.photo_url || null,
+        isAdmin: true, // Always true for admin account
+      };
+    }
+    
     const isAdmin = adminEmails.includes(userSession.user.email || '');
     return {
       id: userSession.user.id,
@@ -165,6 +176,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Attempting login for:', email);
       
+      // Special handling for admin account
+      if (email === 'admin@example.com' && password === 'admin123') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: 'admin123', // Use the admin password
+        });
+        
+        if (error) {
+          console.error('Admin login error:', error);
+          throw new Error(error.message);
+        }
+        
+        console.log('Admin login successful:', data);
+        
+        toast({
+          title: "Success",
+          description: "Admin login successful",
+        });
+        
+        return;
+      }
+      
+      // Regular user login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -175,8 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
       
-      // For admin page access check - we'll check isAdmin property instead of restricting login
-      // This allows regular users to log in normally
       console.log('Login successful:', data);
       
       toast({

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, User, Calendar, Package, UserPlus, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { ShieldCheck, User, Calendar, Package, UserPlus, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,11 @@ const Admin = () => {
     // Redirect logic for non-admin users
     if (!isLoading) {
       if (!isAuthenticated) {
-        navigate('/login');
+        navigate('/login', { state: { from: '/admin' } });
+        toast({
+          title: "Authentication Required",
+          description: "Please login to access the admin dashboard",
+        });
       } else if (!isAdmin) {
         navigate('/profile');
         toast({
@@ -41,6 +45,7 @@ const Admin = () => {
           variant: "destructive",
         });
       } else {
+        // Only fetch data if authenticated and admin
         fetchData();
       }
     }
@@ -50,6 +55,7 @@ const Admin = () => {
     setFetchLoading(true);
     try {
       // Fetch all bookings with user details
+      console.log('Fetching bookings data...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('vr_bookings')
         .select(`
@@ -57,10 +63,15 @@ const Admin = () => {
           profiles:user_id(name, email)
         `);
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        throw bookingsError;
+      }
+      console.log('Bookings data:', bookingsData);
       setBookings(bookingsData || []);
 
       // Fetch all quote requests with user details
+      console.log('Fetching quote requests...');
       const { data: quotesData, error: quotesError } = await supabase
         .from('quote_requests')
         .select(`
@@ -68,16 +79,25 @@ const Admin = () => {
           profiles:user_id(name, email)
         `);
 
-      if (quotesError) throw quotesError;
+      if (quotesError) {
+        console.error('Error fetching quotes:', quotesError);
+        throw quotesError;
+      }
+      console.log('Quote data:', quotesData);
       setQuoteRequests(quotesData || []);
 
       // Fetch all users
+      console.log('Fetching users...');
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
+      }
+      console.log('Users data:', usersData);
       setUsers(usersData || []);
 
       // Calculate stats
@@ -85,11 +105,16 @@ const Admin = () => {
       const pendingQuotesCount = quotesData ? quotesData.filter(q => q.status === 'pending').length : 0;
       
       // Get total packages count
+      console.log('Fetching packages count...');
       const { count: packagesCount, error: packagesError } = await supabase
         .from('user_packages')
         .select('*', { count: 'exact', head: true });
       
-      if (packagesError) throw packagesError;
+      if (packagesError) {
+        console.error('Error fetching packages count:', packagesError);
+        throw packagesError;
+      }
+      console.log('Packages count:', packagesCount);
 
       setStats({
         totalUsers: usersData ? usersData.length : 0,
@@ -100,6 +125,11 @@ const Admin = () => {
 
     } catch (error) {
       console.error('Error fetching admin data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load admin data. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setFetchLoading(false);
     }
@@ -183,8 +213,9 @@ const Admin = () => {
   if (isLoading || fetchLoading) {
     return (
       <MainLayout>
-        <div className="container py-16 text-center">
-          <p>Loading...</p>
+        <div className="container py-16 flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-xl">Loading admin dashboard...</p>
         </div>
       </MainLayout>
     );

@@ -36,7 +36,7 @@ const formSchema = z.object({
 const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { login, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   
@@ -45,9 +45,14 @@ const LoginForm = () => {
   useEffect(() => {
     // Check if user is already authenticated 
     if (isAuthenticated && !authLoading) {
-      navigate(from, { replace: true });
+      // Redirect admin users to the admin dashboard
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     }
-  }, [isAuthenticated, authLoading, navigate, from]);
+  }, [isAuthenticated, isAdmin, authLoading, navigate, from]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,15 +75,17 @@ const LoginForm = () => {
             title: "Admin Login Successful",
             description: "Welcome to the admin dashboard!",
           });
-          // Manually redirect to admin page
-          navigate('/admin', { replace: true });
-          return;
+          
+          // Use the actual login function to create a proper session
+          await login(values.email, values.password);
+          
+          // The useEffect will handle the redirection
         }
+      } else {
+        // Regular login flow for non-admin users
+        await login(values.email, values.password);
+        // Successful login will trigger the useEffect above to redirect
       }
-      
-      // Regular login flow for non-admin users
-      await login(values.email, values.password);
-      // Successful login will trigger the useEffect above to redirect
     } catch (error) {
       console.error('Login error:', error);
       // Error toast is already shown in the login function
