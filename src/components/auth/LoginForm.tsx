@@ -68,23 +68,7 @@ const LoginForm = () => {
     try {
       console.log('Attempting login with:', values.email);
       
-      // Handle admin login
-      if (values.email === 'admin@example.com' && values.password === 'admin123') {
-        console.log('Admin login detected');
-        
-        // Use the login function to create a proper session
-        await login(values.email, values.password);
-        
-        toast({
-          title: "Admin Login Successful",
-          description: "Welcome to the admin dashboard",
-        });
-        
-        // The useEffect will handle the redirection
-        return;
-      }
-      
-      // Regular login flow for non-admin users
+      // Regular login flow
       await login(values.email, values.password);
       // Successful login will trigger the useEffect above to redirect
     } catch (error) {
@@ -108,17 +92,6 @@ const LoginForm = () => {
   
   return (
     <div className="max-w-md w-full">
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <h3 className="font-medium text-blue-800 mb-2">Admin Access</h3>
-        <p className="text-sm text-blue-700">
-          Use these credentials for admin access:
-          <br />
-          Email: <span className="font-mono bg-white px-1 rounded">admin@example.com</span>
-          <br />
-          Password: <span className="font-mono bg-white px-1 rounded">admin123</span>
-        </p>
-      </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
