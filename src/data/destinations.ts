@@ -28,8 +28,8 @@ export const destinations: DestinationWithTourDetails[] = [
     duration: '1 Day',
     price: 5000,
     rating: 4.8,
-    videoUrl: 'https://www.youtube.com/embed/KNhrE6GId4Y',
-    imageUrl: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1200',
+    videoUrl: 'https://www.youtube.com/embed/Bx2S7JpdOp4?si=bO7BUvz9RbYz3N-U',
+    imageUrl: 'https://plus.unsplash.com/premium_photo-1697729441569-f706fdd1f71c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8dGFqJTIwbWFoYWx8ZW58MHx8MHx8fDA%3D',
     accommodation: 'Luxury hotels available nearby',
     inclusions: ['Entry tickets', 'Guided tour', 'Lunch'],
     itinerary: [
@@ -44,8 +44,8 @@ export const destinations: DestinationWithTourDetails[] = [
     duration: '2 Days',
     price: 4000,
     rating: 4.4,
-    videoUrl: 'https://www.youtube.com/embed/Pp-JlbGHIKM',
-    imageUrl: 'https://images.unsplash.com/photo-1599420425731-e5593a454048?q=80&w=1200',
+    videoUrl: 'https://www.youtube.com/embed/6gDBq8M_JOg?si=o5VzhA93qRqYzASX',
+    imageUrl: 'https://media.istockphoto.com/id/1163455002/photo/varanasi-city-architecture-with-view-of-migratory-birds-on-river-ganges-as-seen-from-a-boat.jpg?s=2048x2048&w=is&k=20&c=qcmnONS-nCCMqUQ21-WfzSdWOLfA0GUswP_RAute4Y4=',
     accommodation: 'Guesthouse stay',
     inclusions: ['Accommodation', 'Ganga Aarti', 'Boat ride'],
     itinerary: [
@@ -63,8 +63,8 @@ export const destinations: DestinationWithTourDetails[] = [
     duration: '2 Days',
     price: 7500,
     rating: 4.6,
-    videoUrl: 'https://www.youtube.com/embed/JUJqWAbCjKk',
-    imageUrl: 'https://images.unsplash.com/photo-1572914839059-2f35565e35ae?q=80&w=1200',
+    videoUrl: 'https://www.youtube.com/embed/U5DLLfPOXMI?si=HEUbk_YiZHv3huua',
+    imageUrl: 'https://images.unsplash.com/photo-1506461883276-594a12b11cf3?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8a2VyYWxhJTIwYmFja3dhdGVyc3xlbnwwfHwwfHx8MA%3D%3D',
     accommodation: 'Houseboat stay',
     inclusions: ['Houseboat stay', 'Meals', 'Village visit'],
     itinerary: [
@@ -81,7 +81,7 @@ export const destinations: DestinationWithTourDetails[] = [
     price: 6500,
     rating: 4.7,
     videoUrl: 'https://www.youtube.com/embed/sFr5F2pF2R0',
-    imageUrl: 'https://images.unsplash.com/photo-1548689813-1eb31a2e6116?q=80&w=1200',
+    imageUrl: 'https://plus.unsplash.com/premium_photo-1692049124070-87d5ddfea09a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjF8fG11bmF2YXIlMjB0ZWElMjBnYXJkZW58ZW58MHx8MHx8fDA%3D',
     accommodation: 'Mountain resort',
     inclusions: ['Accommodation', 'Tea plantation tour', 'Wildlife safari'],
     itinerary: [
@@ -100,8 +100,8 @@ export const destinations: DestinationWithTourDetails[] = [
     duration: '3 Days',
     price: 6000,
     rating: 4.7,
-    videoUrl: 'https://www.youtube.com/embed/rdc36JCPs9Y',
-    imageUrl: 'https://images.unsplash.com/photo-1517191434788-255216a92493?q=80&w=1200',
+    videoUrl: 'https://www.youtube.com/embed/kIERJCQ9vb0?si=Jd4hKgUtvrMwJ9Ff',
+    imageUrl: 'https://media.istockphoto.com/id/1157048446/photo/aerial-shot-of-the-beach-from-above-showing-sea-beach-mountain-and-a-coconut-plantation-goa.jpg?s=2048x2048&w=is&k=20&c=3TVNwRNfD2zuoDLy-YRRqjlbP00cHTYNO-hnt1f6tM8=',
     accommodation: 'Beach resort stay',
     inclusions: ['Accommodation', 'Water sports', 'Sightseeing'],
     itinerary: [
@@ -119,7 +119,7 @@ export const destinations: DestinationWithTourDetails[] = [
     price: 3500,
     rating: 4.5,
     videoUrl: 'https://www.youtube.com/embed/K1RdjraGjKQ',
-    imageUrl: 'https://images.unsplash.com/photo-1583505093722-63ab271570d7?q=80&w=1200',
+    imageUrl: 'https://media.istockphoto.com/id/93174418/photo/cathederal-in-old-goa.webp?a=1&b=1&s=612x612&w=0&k=20&c=KT5jSbB6g8oxIg1jORLO6Rd8FPvVeEdgtEmQW5Tj2JM=',
     accommodation: 'Heritage hotel stay',
     inclusions: ['Guided heritage tour', 'Lunch at local restaurant', 'Transportation'],
     itinerary: [
@@ -136,8 +136,8 @@ export const destinations: DestinationWithTourDetails[] = [
     duration: '4 Days',
     price: 8000,
     rating: 4.5,
-    videoUrl: 'https://www.youtube.com/embed/DQ9FIm-mq-Y',
-    imageUrl: 'https://images.unsplash.com/photo-1628515957778-52f981199c04?q=80&w=1200',
+    videoUrl: 'https://www.youtube.com/embed/CUxiyH4jLxU?si=8IXrAs99to37IuIE',
+    imageUrl: 'https://media.istockphoto.com/id/1024816978/photo/master-in-desert.jpg?s=1024x1024&w=is&k=20&c=dVA47zZJOiMGEfiFJcvBKLzDYYSBTfPtSQk8WbBv2y8=',
     accommodation: 'Desert camp stay',
     inclusions: ['Accommodation', 'Camel safari', 'Cultural show'],
     itinerary: [
@@ -156,7 +156,7 @@ export const destinations: DestinationWithTourDetails[] = [
     price: 7500,
     rating: 4.8,
     videoUrl: 'https://www.youtube.com/embed/Wh-OLz2O_Ew',
-    imageUrl: 'https://images.unsplash.com/photo-1576487236230-eaa4afe68618?q=80&w=1200',
+    imageUrl: 'https://media.istockphoto.com/id/155152863/photo/city-palace-in-udaipur-india.webp?a=1&b=1&s=612x612&w=0&k=20&c=zunQwNAwQrgoGP4LFl-ZNIFv_5f5QrOmJKjBicL9Dco=',
     accommodation: 'Heritage hotel',
     inclusions: ['Accommodation', 'Palace tour', 'Lake cruise', 'Cultural performance'],
     itinerary: [
@@ -166,44 +166,44 @@ export const destinations: DestinationWithTourDetails[] = [
     ]
   },
   
-  // North India - Ladakh
-  {
-    id: 'd5',
-    name: 'Ladakh Monasteries',
-    location: 'Leh, Ladakh, India',
-    description: 'Ladakh, "the land of high passes", is a region administered by India as a union territory and constituting a part of the larger Kashmir region.',
-    duration: '5 Days',
-    price: 10000,
-    rating: 4.9,
-    videoUrl: 'https://www.youtube.com/embed/JjTj7VbEj30',
-    imageUrl: 'https://images.unsplash.com/photo-1615934669857-9e799b355923?q=80&w=1200',
-    accommodation: 'Monastery stay',
-    inclusions: ['Accommodation', 'Sightseeing', 'Meals'],
-    itinerary: [
-      { day: 1, title: 'Arrival in Leh', description: 'Arrive in Leh and check into your accommodation.' },
-      { day: 2, title: 'Sightseeing', description: 'Visit local monasteries.' },
-      { day: 3, title: 'Pangong Lake', description: 'Visit Pangong Lake.' },
-      { day: 4, title: 'Nubra Valley', description: 'Visit Nubra Valley.' },
-      { day: 5, title: 'Departure', description: 'Depart from Leh.' }
-    ]
-  },
-  {
-    id: 'd15',
-    name: 'Magnetic Hill & Confluence',
-    location: 'Leh, Ladakh, India',
-    description: 'Experience the natural wonder of Magnetic Hill and the sacred confluence of the Indus and Zanskar rivers, offering stunning landscapes and unique geological phenomena.',
-    duration: '2 Days',
-    price: 6500,
-    rating: 4.6,
-    videoUrl: 'https://www.youtube.com/embed/KZOZUJaSK4o',
-    imageUrl: 'https://images.unsplash.com/photo-1545211900-59365f7638b2?q=80&w=1200',
-    accommodation: 'Boutique homestay',
-    inclusions: ['Accommodation', 'Transport', 'Local guide', 'Meals'],
-    itinerary: [
-      { day: 1, title: 'Magnetic Hill', description: 'Experience the optical illusion at Magnetic Hill and visit Gurudwara Pathar Sahib.' },
-      { day: 2, title: 'River Confluence', description: 'Visit the spectacular confluence of Indus and Zanskar rivers and enjoy photography.' }
-    ]
-  },
+  // // North India - Ladakh
+  // {
+  //   id: 'd5',
+  //   name: 'Ladakh Monasteries',
+  //   location: 'Leh, Ladakh, India',
+  //   description: 'Ladakh, "the land of high passes", is a region administered by India as a union territory and constituting a part of the larger Kashmir region.',
+  //   duration: '5 Days',
+  //   price: 10000,
+  //   rating: 4.9,
+  //   videoUrl: 'https://www.youtube.com/embed/JjTj7VbEj30',
+  //   imageUrl: 'https://media.istockphoto.com/id/877332198/photo/buddha-statue-and-hemis-monastery-ladakh.webp?a=1&b=1&s=612x612&w=0&k=20&c=fJPJoecgU3gD4TMMkM1nw9-jKzjUxG15Y33MDyNOC6c=',
+  //   accommodation: 'Monastery stay',
+  //   inclusions: ['Accommodation', 'Sightseeing', 'Meals'],
+  //   itinerary: [
+  //     { day: 1, title: 'Arrival in Leh', description: 'Arrive in Leh and check into your accommodation.' },
+  //     { day: 2, title: 'Sightseeing', description: 'Visit local monasteries.' },
+  //     { day: 3, title: 'Pangong Lake', description: 'Visit Pangong Lake.' },
+  //     { day: 4, title: 'Nubra Valley', description: 'Visit Nubra Valley.' },
+  //     { day: 5, title: 'Departure', description: 'Depart from Leh.' }
+  //   ]
+  // },
+  // {
+  //   id: 'd15',
+  //   name: 'Magnetic Hill & Confluence',
+  //   location: 'Leh, Ladakh, India',
+  //   description: 'Experience the natural wonder of Magnetic Hill and the sacred confluence of the Indus and Zanskar rivers, offering stunning landscapes and unique geological phenomena.',
+  //   duration: '2 Days',
+  //   price: 6500,
+  //   rating: 4.6,
+  //   videoUrl: 'https://www.youtube.com/embed/KZOZUJaSK4o',
+  //   imageUrl: 'https://images.unsplash.com/photo-1545211900-59365f7638b2?q=80&w=1200',
+  //   accommodation: 'Boutique homestay',
+  //   inclusions: ['Accommodation', 'Transport', 'Local guide', 'Meals'],
+  //   itinerary: [
+  //     { day: 1, title: 'Magnetic Hill', description: 'Experience the optical illusion at Magnetic Hill and visit Gurudwara Pathar Sahib.' },
+  //     { day: 2, title: 'River Confluence', description: 'Visit the spectacular confluence of Indus and Zanskar rivers and enjoy photography.' }
+  //   ]
+  // },
   
   // East India - West Bengal
   {
