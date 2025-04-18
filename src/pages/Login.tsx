@@ -48,14 +48,14 @@ const Login = () => {
                     Sign in to your ExploreVR account
                   </p>
                 </div>
-                
+                {/*                 
                 <Alert className="mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     For admin access, use admin@example.com with password: admin123
                   </AlertDescription>
                 </Alert>
-                
+                 */}
                 <LoginForm />
                 
                 <div className="mt-6 pt-6 border-t text-center">
