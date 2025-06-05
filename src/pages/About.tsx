@@ -56,7 +56,7 @@ const About = () => {
               <div className="absolute -bottom-6 -right-6 w-36 h-36 bg-primary rounded-xl flex items-center justify-center text-white p-4 shadow-subtle">
                 <div className="text-center">
                   <p className="text-sm font-medium">Founded</p>
-                  <p className="text-3xl font-bold">2023</p>
+                  <p className="text-3xl font-bold">2024</p>
                 </div>
               </div>
             </div>
