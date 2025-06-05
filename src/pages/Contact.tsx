@@ -150,7 +150,7 @@ const Contact = () => {
                           href="mailto:info@explorevr.com" 
                           className="text-muted-foreground hover:text-primary transition-colors"
                         >
-                          info@explorevr.com
+                          360tripss@gmail.com
                         </a>
                       </div>
                     </div>
@@ -173,9 +173,9 @@ const Contact = () => {
                       <div>
                         <p className="font-medium">Address</p>
                         <address className="text-muted-foreground not-italic">
-                          123 VR Street<br />
-                          Tech Valley, CA 94025<br />
-                          United States
+                          VM Residency<br />
+                          Balewadi Gaon, Pune-411 045<br />
+                          India
                         </address>
                       </div>
                     </div>
