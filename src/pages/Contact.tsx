@@ -175,7 +175,7 @@ const Contact = () => {
                         <address className="text-muted-foreground not-italic">
                           VM Residency<br />
                           Balewadi Gaon, Pune-411 045<br />
-                          India
+                          Maharashtra, India
                         </address>
                       </div>
                     </div>
