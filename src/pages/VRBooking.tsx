@@ -130,7 +130,7 @@ const VRBooking = () => {
                   </h3>
                   <div className="space-y-3 text-sm">
                     <p><strong>Duration:</strong> 2 hours</p>
-                    <p><strong>Price:</strong> ₹8,000 per session</p>
+                    <p><strong>Price:</strong> ₹800 per session</p>
                     <p><strong>Availability:</strong> 7 days a week, 10am-8pm</p>
                     <p><strong>Equipment:</strong> All equipment provided</p>
                     <p><strong>Requirements:</strong> Minimum 10x10 ft clear space</p>
